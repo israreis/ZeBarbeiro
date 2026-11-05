@@ -315,6 +315,17 @@ describe('servidor HTTP', () => {
     }
   });
 
+  test('CSS e JS são revalidados a cada acesso (ETag) para não usar versão antiga', async () => {
+    const primeira = await fetch(`${baseUrl}/css/base.css`);
+    assert.equal(primeira.status, 200);
+    assert.equal(primeira.headers.get('cache-control'), 'no-cache');
+    const etag = primeira.headers.get('etag');
+    assert.ok(etag);
+
+    const revalidacao = await fetch(`${baseUrl}/css/base.css`, { headers: { 'if-none-match': etag } });
+    assert.equal(revalidacao.status, 304);
+  });
+
   test('rejeita JSON inválido e rotas inexistentes', async () => {
     const invalido = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{',

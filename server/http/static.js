@@ -14,9 +14,16 @@ const MIME_TYPES = Object.freeze({
   '.webp': 'image/webp',
 });
 
+/** Imagens mudam raramente; HTML, CSS e JS precisam refletir cada atualização do código. */
+const LONG_CACHE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.svg', '.ico', '.webp']);
+
 /**
  * Serve arquivos estáticos de `rootDir`, bloqueando path traversal
  * e arquivos ocultos. Retorna `false` quando o arquivo não existe.
+ *
+ * HTML, CSS e JS usam `no-cache` + ETag: o navegador guarda o arquivo, mas
+ * confirma com o servidor a cada acesso (resposta 304 quando nada mudou).
+ * Assim uma atualização nunca mistura HTML novo com CSS/JS antigos.
  */
 export async function serveStatic(req, res, pathname, rootDir) {
   let decoded;
@@ -36,20 +43,35 @@ export async function serveStatic(req, res, pathname, rootDir) {
   const contentType = MIME_TYPES[extension];
   if (!contentType) return false;
 
+  let stat;
+  try {
+    stat = await fs.stat(filePath);
+  } catch {
+    return false;
+  }
+  if (!stat.isFile()) return false;
+
+  const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
+  const headers = {
+    'Content-Type': contentType,
+    'Cache-Control': LONG_CACHE_EXTENSIONS.has(extension) ? 'public, max-age=86400' : 'no-cache',
+    ETag: etag,
+    'Last-Modified': stat.mtime.toUTCString(),
+  };
+
+  if (req.headers['if-none-match'] === etag) {
+    res.writeHead(304, headers);
+    res.end();
+    return true;
+  }
+
   let content;
   try {
-    const stat = await fs.stat(filePath);
-    if (!stat.isFile()) return false;
     content = await fs.readFile(filePath);
   } catch {
     return false;
   }
-
-  res.writeHead(200, {
-    'Content-Type': contentType,
-    'Content-Length': content.length,
-    'Cache-Control': extension === '.html' ? 'no-cache' : 'public, max-age=3600',
-  });
+  res.writeHead(200, { ...headers, 'Content-Length': content.length });
   res.end(req.method === 'HEAD' ? undefined : content);
   return true;
 }
