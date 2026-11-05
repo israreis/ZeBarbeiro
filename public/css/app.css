@@ -1,0 +1,135 @@
+/* ==========================================================================
+   Páginas internas (administrador, barbeiro e cliente).
+   ========================================================================== */
+
+body {
+  font-size: 1.3rem;
+}
+
+/* Evita exibir o conteúdo antes de confirmar a sessão do usuário. */
+body:not(.is-ready) main {
+  visibility: hidden;
+}
+
+main {
+  padding: 25px 1rem;
+  background-color: var(--color-peach);
+  color: var(--color-brown);
+}
+
+.page-title {
+  margin: 0 0 1rem;
+  text-align: center;
+  color: var(--color-brown);
+  font-weight: bold;
+}
+
+/* ---------- Formulários de consulta ---------- */
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+  margin: 1rem auto;
+  font-weight: bold;
+}
+
+.filter-form .field {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-form input,
+.filter-form select {
+  margin-top: 0.4rem;
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--radius-pill);
+}
+
+.filter-form .situacao {
+  display: flex;
+  flex-basis: 100%;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+/* ---------- Tabelas ---------- */
+
+.table-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.table-app {
+  margin: 1.5rem 40px;
+  background-color: var(--color-white);
+  border-radius: 5px;
+  overflow: hidden;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table-app th {
+  white-space: nowrap;
+}
+
+.table-empty {
+  padding: 1.5rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.btn-table {
+  padding: 2px 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-peach);
+  color: var(--color-black);
+  font-weight: bold;
+}
+
+.slot-checkbox {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.page-actions a.btn-app {
+  text-decoration: none;
+}
+
+/* ---------- Formulários dos modais de cadastro ---------- */
+
+.modal-body .form-label {
+  margin-top: 0.75rem;
+}
+
+.days-list .form-check {
+  margin-bottom: 0.25rem;
+}
+
+.services-select {
+  min-height: 10rem;
+}
+
+@media (max-width: 1000px) {
+  body {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .table-app {
+    margin: 1rem 0;
+  }
+}

@@ -1,0 +1,139 @@
+/* ==========================================================================
+   Página inicial (apresentação, login e cadastro de clientes).
+   ========================================================================== */
+
+.landing-main {
+  display: flow-root;
+  padding: 0 5%;
+  background: url('../img/capa-barbearia.jpg') center top / cover no-repeat;
+  color: var(--color-white);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: calc(1.375rem + 1.5vw);
+}
+
+.section-heading .line {
+  flex-grow: 1;
+  border-top: 2px solid var(--color-gold);
+}
+
+/* ---------- Sobre nós ---------- */
+
+.about {
+  min-height: 500px;
+  padding-top: 1rem;
+}
+
+.about-text {
+  max-width: 45%;
+}
+
+/* ---------- Serviços e feedbacks ---------- */
+
+.landing-section {
+  margin: 0 auto 6rem;
+}
+
+.card-dark {
+  height: 100%;
+  padding: 8px;
+  border-radius: 15px;
+  background-color: var(--color-dark-brown);
+  color: aliceblue;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-dark .card-thumb {
+  width: 100px;
+  height: 100px;
+  margin-right: 20px;
+  object-fit: cover;
+}
+
+.card-dark .card-title-lg {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.feedback-card {
+  max-width: 500px;
+  padding: 20px;
+}
+
+/* ---------- Produtos ---------- */
+
+.products-banner {
+  display: block;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+
+/* ---------- Botão de acesso e modais ---------- */
+
+.btn-access {
+  background-color: var(--color-gold);
+}
+
+.btn-access img {
+  width: 20px;
+}
+
+.modal-login {
+  position: fixed;
+  top: 10%;
+  right: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin: 0;
+}
+
+.modal-login .modal-content {
+  border-radius: 1rem;
+}
+
+.modal-login .form-control {
+  border-radius: 20px;
+}
+
+.signup-link {
+  border: none;
+  background: none;
+  color: var(--color-brown);
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .about-text {
+    max-width: 100%;
+    font-size: small;
+  }
+
+  .modal-login {
+    right: 5%;
+    width: 90%;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .card-dark .card-thumb {
+    width: 75px;
+    height: 75px;
+  }
+}
+
+@media (max-width: 576px) {
+  .products-banner {
+    height: 200px;
+    object-fit: cover;
+  }
+}

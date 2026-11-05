@@ -1,0 +1,232 @@
+/* ==========================================================================
+   Base compartilhada por todas as páginas: tokens, cabeçalho, rodapé,
+   botões, modais e notificações.
+   ========================================================================== */
+
+:root {
+  --color-gold: #c79655;
+  --color-brown: #7a4d2c;
+  --color-peach: #fcd1a7;
+  --color-dark-brown: #301f18;
+  --color-black: #000;
+  --color-white: #fff;
+  --color-footer: #212529;
+  --font-family: Arial, Helvetica, sans-serif;
+  --radius-pill: 25px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--color-black);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: inherit;
+  font-weight: bold;
+}
+
+/* ---------- Cabeçalho ---------- */
+
+.app-header {
+  padding: 1.5rem;
+  background: url('../img/capa-barbearia.jpg') center / cover no-repeat;
+}
+
+.app-logo {
+  max-width: 100px;
+  max-height: 100px;
+}
+
+.navbar-toggler {
+  background-color: var(--color-gold);
+}
+
+.navbar-nav .nav-link {
+  color: var(--color-white);
+  font-size: 1.3rem;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus-visible,
+.navbar-nav .nav-link.active {
+  color: var(--color-gold);
+}
+
+.app-greeting {
+  margin: 0 0.75rem;
+  color: var(--color-peach);
+  font-size: 1rem;
+}
+
+.btn-account {
+  background-color: var(--color-gold);
+}
+
+.btn-account img {
+  width: 20px;
+}
+
+.divider-gold {
+  margin: 0.5rem 0;
+  border-top: 2px solid var(--color-gold);
+}
+
+/* ---------- Botões ---------- */
+
+.btn-app {
+  padding: 0.5rem 1.25rem;
+  margin: 0.5rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-gold);
+  color: var(--color-brown);
+  font-weight: bold;
+}
+
+.btn-app:hover:not(:disabled),
+.btn-app:focus-visible {
+  filter: brightness(1.08);
+}
+
+.btn-app:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* ---------- Modais ---------- */
+
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer {
+  background-color: var(--color-peach);
+  border-color: var(--color-white);
+  color: var(--color-brown);
+  font-weight: bold;
+}
+
+.modal-title {
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+}
+
+.modal-section-title {
+  margin: 0.5rem 0 1rem;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.modal-footer {
+  justify-content: center;
+}
+
+/* Menu da conta (pequeno, ancorado no canto superior direito). */
+.modal-account-menu {
+  position: fixed;
+  top: 140px;
+  right: 50px;
+  width: 100%;
+  max-width: 200px;
+  margin: 0;
+}
+
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--color-brown);
+  font-weight: bold;
+  text-align: start;
+}
+
+.account-menu-item:hover,
+.account-menu-item:focus-visible {
+  text-decoration: underline;
+}
+
+.account-menu-item img {
+  width: 20px;
+}
+
+.account-details dt {
+  margin-top: 0.5rem;
+}
+
+.account-details dd {
+  margin: 0;
+  font-weight: normal;
+}
+
+/* ---------- Rodapé ---------- */
+
+.app-footer {
+  padding: 3rem 1rem 1rem;
+  background-color: var(--color-footer);
+}
+
+.footer-title {
+  font-size: 1.25rem;
+}
+
+.app-footer a {
+  color: var(--color-white);
+}
+
+.social-icon {
+  width: 20px;
+}
+
+.footer-copyright {
+  margin: 1.5rem 0 0;
+}
+
+/* ---------- Notificações ---------- */
+
+.toast-region {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(400px, calc(100vw - 2rem));
+}
+
+.toast-message {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+}
+
+/* ---------- Utilitários ---------- */
+
+@media (max-width: 576px) {
+  .hide-sm {
+    display: none;
+  }
+
+  .modal-account-menu {
+    top: 100px;
+    right: 1rem;
+  }
+}
