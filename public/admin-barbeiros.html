@@ -96,58 +96,56 @@
 
           <h3 class="modal-section-title mt-4">Atendimento</h3>
           <div class="row g-3">
-            <div class="col-md-6">
-              <label for="barbeiro-servicos" class="form-label">Serviços que realiza</label>
-              <select class="form-select services-select" id="barbeiro-servicos" name="servicoIds" multiple required
-                aria-describedby="barbeiro-servicos-dica"></select>
-              <p class="form-hint mt-1 mb-0" id="barbeiro-servicos-dica">Segure Ctrl (ou ⌘) para selecionar vários.</p>
+            <div class="col-6 col-md-3">
+              <label for="barbeiro-inicio" class="form-label">Início do expediente</label>
+              <input type="time" class="form-control" id="barbeiro-inicio" name="horarioInicial" step="1800" required>
             </div>
-            <div class="col-md-6">
-              <div class="row g-3">
-                <div class="col-6">
-                  <label for="barbeiro-inicio" class="form-label">Início do expediente</label>
-                  <input type="time" class="form-control" id="barbeiro-inicio" name="horarioInicial" step="1800" required>
-                </div>
-                <div class="col-6">
-                  <label for="barbeiro-fim" class="form-label">Fim do expediente</label>
-                  <input type="time" class="form-control" id="barbeiro-fim" name="horarioFinal" step="1800" required>
-                </div>
-              </div>
-              <fieldset class="mt-3">
-                <legend class="form-label">Dias de atendimento</legend>
-                <div class="days-grid">
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="segunda" id="dia-segunda">
-                    <label for="dia-segunda">Segunda</label>
-                  </div>
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="terca" id="dia-terca">
-                    <label for="dia-terca">Terça</label>
-                  </div>
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="quarta" id="dia-quarta">
-                    <label for="dia-quarta">Quarta</label>
-                  </div>
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="quinta" id="dia-quinta">
-                    <label for="dia-quinta">Quinta</label>
-                  </div>
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="sexta" id="dia-sexta">
-                    <label for="dia-sexta">Sexta</label>
-                  </div>
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="sabado" id="dia-sabado">
-                    <label for="dia-sabado">Sábado</label>
-                  </div>
-                  <div class="chip">
-                    <input type="checkbox" name="diasDisponiveis" value="domingo" id="dia-domingo">
-                    <label for="dia-domingo">Domingo</label>
-                  </div>
-                </div>
-              </fieldset>
+            <div class="col-6 col-md-3">
+              <label for="barbeiro-fim" class="form-label">Fim do expediente</label>
+              <input type="time" class="form-control" id="barbeiro-fim" name="horarioFinal" step="1800" required>
             </div>
           </div>
+
+          <fieldset class="mt-3">
+            <legend class="form-label">Dias de atendimento</legend>
+            <div class="days-grid">
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="segunda" id="dia-segunda">
+                <label for="dia-segunda" title="Segunda"><span aria-hidden="true">Seg</span><span class="visually-hidden">Segunda</span></label>
+              </div>
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="terca" id="dia-terca">
+                <label for="dia-terca" title="Terça"><span aria-hidden="true">Ter</span><span class="visually-hidden">Terça</span></label>
+              </div>
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="quarta" id="dia-quarta">
+                <label for="dia-quarta" title="Quarta"><span aria-hidden="true">Qua</span><span class="visually-hidden">Quarta</span></label>
+              </div>
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="quinta" id="dia-quinta">
+                <label for="dia-quinta" title="Quinta"><span aria-hidden="true">Qui</span><span class="visually-hidden">Quinta</span></label>
+              </div>
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="sexta" id="dia-sexta">
+                <label for="dia-sexta" title="Sexta"><span aria-hidden="true">Sex</span><span class="visually-hidden">Sexta</span></label>
+              </div>
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="sabado" id="dia-sabado">
+                <label for="dia-sabado" title="Sábado"><span aria-hidden="true">Sáb</span><span class="visually-hidden">Sábado</span></label>
+              </div>
+              <div class="chip">
+                <input type="checkbox" name="diasDisponiveis" value="domingo" id="dia-domingo">
+                <label for="dia-domingo" title="Domingo"><span aria-hidden="true">Dom</span><span class="visually-hidden">Domingo</span></label>
+              </div>
+            </div>
+            <p class="group-error" id="erro-dias" role="alert" hidden>Selecione pelo menos um dia de atendimento.</p>
+          </fieldset>
+
+          <fieldset class="mt-3">
+            <legend class="form-label">Serviços que realiza</legend>
+            <div class="services-grid" id="barbeiro-servicos"></div>
+            <p class="group-error" id="erro-servicos" role="alert" hidden>Selecione pelo menos um serviço.</p>
+          </fieldset>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>

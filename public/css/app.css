@@ -293,25 +293,45 @@ body.is-ready main {
 
 .days-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
-/* Dias como "chips" selecionáveis */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.5rem;
+}
+
+/* Opções selecionáveis em formato de "chip" (dias e serviços) */
+.chip {
+  position: relative;
+}
+
 .chip input {
   position: absolute;
   opacity: 0;
+  pointer-events: none;
 }
 
 .chip label {
   display: block;
-  padding: 0.45rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--seam);
   border-radius: 999px;
   color: var(--sand);
   text-align: center;
   cursor: pointer;
-  transition: all var(--duration) var(--ease-out);
+  user-select: none;
+  transition:
+    border-color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    color var(--duration) var(--ease-out);
+}
+
+.chip label:hover {
+  border-color: var(--brass-deep);
+  color: var(--ivory);
 }
 
 .chip input:checked + label {
@@ -325,8 +345,47 @@ body.is-ready main {
   outline-offset: 2px;
 }
 
-.services-select {
-  min-height: 9.5rem;
+/* Serviços: chip retangular com marcador de seleção à esquerda */
+.chip-service label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+
+.chip-service label::before {
+  content: '';
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--seam);
+  border-radius: 4px;
+  background: var(--espresso) center / 70% no-repeat;
+  transition: background-color var(--duration) var(--ease-out), border-color var(--duration) var(--ease-out);
+}
+
+.chip-service input:checked + label::before {
+  border-color: var(--brass);
+  background-color: var(--brass);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231b130e' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='m3 8 3.5 3.5L13 5'/%3e%3c/svg%3e");
+}
+
+.chip-service .chip-meta {
+  margin-left: auto;
+  color: var(--sand);
+  font-size: 0.85rem;
+}
+
+/* Mensagem de validação de um grupo de opções */
+.group-error {
+  margin: 0.4rem 0 0;
+  color: var(--brick);
+  font-size: 0.85rem;
+}
+
+.group-error[hidden] {
+  display: none;
 }
 
 .form-hint {
@@ -370,6 +429,10 @@ body.is-ready main {
 
   .action-buttons {
     width: 100%;
+  }
+
+  .days-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .action-buttons > * {

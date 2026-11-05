@@ -35,10 +35,6 @@ export function checkedValues(form, name) {
   return [...form.querySelectorAll(`input[name="${name}"]:checked`)].map((input) => input.value);
 }
 
-export function selectedValues(select) {
-  return [...select.selectedOptions].map((option) => option.value).filter(Boolean);
-}
-
 /**
  * Marca o campo de confirmação como inválido quando difere do original
  * (ex.: confirmação de e-mail/senha). Chame antes de `isFormValid`.
