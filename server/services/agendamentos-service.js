@@ -19,9 +19,10 @@ const MAX_HORARIOS_POR_RESERVA = 12;
  */
 export function createAgendamentosService({ store, clock }) {
   const nomeUsuario = (db, id) => db.usuarios.find((u) => u.id === id)?.nome ?? null;
-  const servicoResumo = (db, id) => {
-    const servico = db.servicos.find((s) => s.id === id);
-    return servico ? { id: servico.id, nome: servico.nome, valor: servico.valor } : null;
+  /** Serviço do agendamento; o valor é o gravado na reserva (ou o atual, em registros antigos). */
+  const servicoResumo = (db, ag) => {
+    const servico = db.servicos.find((s) => s.id === ag.servicoId);
+    return servico ? { id: servico.id, nome: servico.nome, valor: ag.valor ?? servico.valor } : null;
   };
 
   const detalhar = (db, ag) => ({
@@ -32,7 +33,7 @@ export function createAgendamentosService({ store, clock }) {
     status: ag.status,
     cliente: ag.clienteId ? nomeUsuario(db, ag.clienteId) : (ag.clienteNome ?? null),
     barbeiro: nomeUsuario(db, ag.barbeiroId),
-    servico: servicoResumo(db, ag.servicoId),
+    servico: servicoResumo(db, ag),
   });
 
   /** Barbeiros só acessam a própria agenda; demais perfis informam o barbeiro. */
@@ -67,8 +68,12 @@ export function createAgendamentosService({ store, clock }) {
     }
   }
 
+  /**
+   * Novo agendamento. O valor do serviço é gravado no momento da reserva, para que
+   * relatórios de períodos passados não mudem quando o preço do serviço for alterado.
+   */
   function novoAgendamento({
-    barbeiroId, clienteId = null, clienteNome, clienteTelefone, servicoId = null, data, horario, status,
+    barbeiroId, clienteId = null, clienteNome, clienteTelefone, servico = null, data, horario, status,
   }) {
     return {
       id: crypto.randomUUID(),
@@ -76,7 +81,8 @@ export function createAgendamentosService({ store, clock }) {
       clienteId,
       ...(clienteNome ? { clienteNome } : {}),
       ...(clienteTelefone ? { clienteTelefone } : {}),
-      servicoId,
+      servicoId: servico?.id ?? null,
+      ...(servico ? { valor: servico.valor } : {}),
       data,
       horarioInicio: horario,
       horarioFim: slotEnd(horario),
@@ -214,10 +220,10 @@ export function createAgendamentosService({ store, clock }) {
         const servicoId = v.requiredString(body?.servicoId, 'serviço');
         return store.update((db) => {
           const barbeiro = findBarbeiro(db, barbeiroId, { exigirAtivo: true });
-          findServicoDoBarbeiro(db, barbeiro, servicoId);
+          const servico = findServicoDoBarbeiro(db, barbeiro, servicoId);
           validarHorarios(db, barbeiro, data, horarios);
           const criados = horarios.map((horario) => novoAgendamento({
-            barbeiroId, clienteId: actor.id, servicoId, data, horario, status: STATUS.AGENDADO,
+            barbeiroId, clienteId: actor.id, servico, data, horario, status: STATUS.AGENDADO,
           }));
           db.agendamentos.push(...criados);
           return criados.map((ag) => detalhar(db, ag));
@@ -232,10 +238,10 @@ export function createAgendamentosService({ store, clock }) {
         const cliente = isAtendimento ? parseClienteManual(body) : {};
         return store.update((db) => {
           const barbeiro = findBarbeiro(db, actor.id, { exigirAtivo: false });
-          if (isAtendimento) findServicoDoBarbeiro(db, barbeiro, servicoId);
+          const servico = isAtendimento ? findServicoDoBarbeiro(db, barbeiro, servicoId) : null;
           validarHorarios(db, barbeiro, data, horarios);
           const criados = horarios.map((horario) => novoAgendamento({
-            barbeiroId: barbeiro.id, ...cliente, servicoId, data, horario, status,
+            barbeiroId: barbeiro.id, ...cliente, servico, data, horario, status,
           }));
           db.agendamentos.push(...criados);
           return criados.map((ag) => detalhar(db, ag));

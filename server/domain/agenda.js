@@ -10,6 +10,11 @@ export const STATUS = Object.freeze({
   CANCELADO: 'Cancelado',
 });
 
+/** Rótulo do status para exibição (relatórios e exportações). */
+export function statusLabel(status) {
+  return status === STATUS.AGENDADO_BARBEIRO ? 'Agendado pelo barbeiro' : status;
+}
+
 /** Status que ocupam o horário na agenda (cancelados liberam o horário). */
 const OCCUPYING = new Set([STATUS.AGENDADO, STATUS.AGENDADO_BARBEIRO, STATUS.BLOQUEADO, STATUS.CONCLUIDO]);
 

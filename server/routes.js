@@ -1,6 +1,8 @@
 import { Router } from './http/router.js';
 import { forbidden, unauthorized } from './http/errors.js';
 import { ROLES, toPublicUser } from './domain/roles.js';
+import { buildReportPdf } from './reports/report-pdf.js';
+import { buildReportXlsx } from './reports/report-xlsx.js';
 
 const { ADMIN, BARBEIRO, CLIENTE } = ROLES;
 const ANY_ROLE = [ADMIN, BARBEIRO, CLIENTE];
@@ -12,7 +14,7 @@ const ANY_ROLE = [ADMIN, BARBEIRO, CLIENTE];
  */
 export function buildRouter({ sessions, store, services }) {
   const {
-    auth, barbeiros, servicos, agendamentos,
+    auth, barbeiros, servicos, agendamentos, relatorios,
   } = services;
 
   /** Middleware de autenticação/autorização baseado em perfil. */
@@ -30,6 +32,26 @@ export function buildRouter({ sessions, store, services }) {
   const withFoto = (usuario) => (usuario.perfil === BARBEIRO
     ? { ...usuario, fotoUrl: barbeiros.fotoUrlOf(usuario.id) }
     : usuario);
+
+  /** Envia um arquivo para download (o nome é montado no servidor, sem dados do usuário). */
+  const sendDownload = (ctx, { content, contentType, fileName }) => {
+    ctx.res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': content.length,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Cache-Control': 'no-store',
+    });
+    ctx.res.end(content);
+    ctx.handled = true;
+  };
+
+  /** Relatório no escopo do usuário; a visão por barbeiro só aparece para o administrador sem filtro. */
+  const gerarRelatorio = (ctx) => {
+    const report = relatorios.gerar(ctx.user, ctx.query);
+    const mostrarBarbeiros = ctx.user.perfil === ADMIN && !report.barbeiro;
+    const fileName = `relatorio-ze-barbeiro-${report.periodo.inicio}-a-${report.periodo.fim}`;
+    return { report, mostrarBarbeiros, fileName };
+  };
 
   const created = (ctx, value) => {
     ctx.status = 201;
@@ -91,6 +113,25 @@ export function buildRouter({ sessions, store, services }) {
     .post('/api/servicos', adminOnly, async (ctx) => created(ctx, await servicos.create(ctx.body)))
     .put('/api/servicos/:id', adminOnly, (ctx) => servicos.update(ctx.params.id, ctx.body))
 
+
+    // Relatórios e painel (administrador: todos os barbeiros; barbeiro: apenas os próprios dados)
+    .get('/api/relatorios', requireRole(ADMIN, BARBEIRO), (ctx) => gerarRelatorio(ctx).report)
+    .get('/api/relatorios/pdf', requireRole(ADMIN, BARBEIRO), (ctx) => {
+      const { report, mostrarBarbeiros, fileName } = gerarRelatorio(ctx);
+      sendDownload(ctx, {
+        content: buildReportPdf(report, { mostrarBarbeiros }),
+        contentType: 'application/pdf',
+        fileName: `${fileName}.pdf`,
+      });
+    })
+    .get('/api/relatorios/xlsx', requireRole(ADMIN, BARBEIRO), (ctx) => {
+      const { report, mostrarBarbeiros, fileName } = gerarRelatorio(ctx);
+      sendDownload(ctx, {
+        content: buildReportXlsx(report, { mostrarBarbeiros }),
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        fileName: `${fileName}.xlsx`,
+      });
+    })
 
     // Agenda e atendimentos
     .get('/api/agenda', requireRole(ADMIN, BARBEIRO), (ctx) => agendamentos.getAgenda(ctx.user, ctx.query))

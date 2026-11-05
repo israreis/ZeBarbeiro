@@ -459,6 +459,51 @@ describe('agenda e agendamentos', () => {
   });
 });
 
+describe('relatórios', () => {
+  const periodo = '?inicio=2026-11-01&fim=2026-11-30';
+
+  test('administrador vê todos os barbeiros; barbeiro só os próprios dados', async () => {
+    const barbeiro = await login('b1@teste.com');
+    await api('PATCH', '/api/agendamentos/a-hoje/concluir', { token: barbeiro });
+
+    const admin = await login('adm@teste.com');
+    const geral = await api('GET', `/api/relatorios${periodo}`, { token: admin });
+    assert.equal(geral.status, 200);
+    assert.equal(geral.body.resumo.agendamentos, 2);
+    assert.equal(geral.body.resumo.concluidos, 1);
+    assert.equal(geral.body.resumo.faturamento, 50);
+    assert.ok(geral.body.insights.length > 0);
+
+    const proprio = await api('GET', `/api/relatorios${periodo}&barbeiroId=b2`, { token: barbeiro });
+    assert.equal(proprio.status, 200);
+    assert.equal(proprio.body.barbeiro.id, 'b1', 'barbeiro não consegue ver dados de outro barbeiro');
+
+    const cliente = await login('c1@teste.com');
+    assert.equal((await api('GET', `/api/relatorios${periodo}`, { token: cliente })).status, 403);
+  });
+
+  test('exporta PDF e Excel', async () => {
+    const token = await login('adm@teste.com');
+    const headers = { authorization: `Bearer ${token}` };
+
+    const pdf = await fetch(`${baseUrl}/api/relatorios/pdf${periodo}`, { headers });
+    assert.equal(pdf.status, 200);
+    assert.equal(pdf.headers.get('content-type'), 'application/pdf');
+    assert.match(pdf.headers.get('content-disposition'), /attachment; filename="relatorio-ze-barbeiro-2026-11-01-a-2026-11-30\.pdf"/);
+    assert.equal(Buffer.from(await pdf.arrayBuffer()).subarray(0, 5).toString(), '%PDF-');
+
+    const xlsx = await fetch(`${baseUrl}/api/relatorios/xlsx${periodo}`, { headers });
+    assert.equal(xlsx.status, 200);
+    assert.equal(Buffer.from(await xlsx.arrayBuffer()).subarray(0, 2).toString(), 'PK');
+  });
+
+  test('valida o período', async () => {
+    const token = await login('adm@teste.com');
+    assert.equal((await api('GET', '/api/relatorios?inicio=2026-11-30&fim=2026-11-01', { token })).status, 422);
+    assert.equal((await api('GET', '/api/relatorios?inicio=2024-01-01&fim=2026-11-01', { token })).status, 422);
+  });
+});
+
 describe('servidor HTTP', () => {
   test('envia cabeçalhos de segurança e serve apenas arquivos públicos', async () => {
     const pagina = await fetch(`${baseUrl}/`);
