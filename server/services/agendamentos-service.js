@@ -1,0 +1,240 @@
+import crypto from 'node:crypto';
+import { conflict, forbidden, notFound, unprocessable } from '../http/errors.js';
+import { ROLES } from '../domain/roles.js';
+import {
+  STATUS, findOccupant, generateSlots, slotEnd, worksOn,
+} from '../domain/agenda.js';
+import { isPast } from '../domain/time.js';
+import * as v from '../validation.js';
+
+const TIPOS_RESERVA_BARBEIRO = [STATUS.AGENDADO_BARBEIRO, STATUS.BLOQUEADO];
+const SITUACOES = { concluidos: 'concluidos', pendentes: 'pendentes' };
+const MAX_HORARIOS_POR_RESERVA = 12;
+
+/**
+ * Regras de negócio da agenda: consulta de horários, reservas, bloqueios,
+ * conclusão e cancelamento de atendimentos, além do histórico.
+ * Todas as verificações são feitas no servidor — a interface apenas reflete o resultado.
+ */
+export function createAgendamentosService({ store, clock }) {
+  const nomeUsuario = (db, id) => db.usuarios.find((u) => u.id === id)?.nome ?? null;
+  const servicoResumo = (db, id) => {
+    const servico = db.servicos.find((s) => s.id === id);
+    return servico ? { id: servico.id, nome: servico.nome, valor: servico.valor } : null;
+  };
+
+  const detalhar = (db, ag) => ({
+    id: ag.id,
+    data: ag.data,
+    horarioInicio: ag.horarioInicio,
+    horarioFim: ag.horarioFim,
+    status: ag.status,
+    cliente: ag.clienteId ? nomeUsuario(db, ag.clienteId) : null,
+    barbeiro: nomeUsuario(db, ag.barbeiroId),
+    servico: servicoResumo(db, ag.servicoId),
+  });
+
+  /** Barbeiros só acessam a própria agenda; demais perfis informam o barbeiro. */
+  function resolveBarbeiroId(actor, barbeiroId) {
+    if (actor.perfil === ROLES.BARBEIRO) return actor.id;
+    return v.requiredString(barbeiroId, 'barbeiro');
+  }
+
+  function findBarbeiro(db, id, { exigirAtivo }) {
+    const barbeiro = db.barbeiros.find((b) => b.id === id);
+    if (!barbeiro || (exigirAtivo && !barbeiro.ativo)) throw notFound('Barbeiro não encontrado.');
+    return barbeiro;
+  }
+
+  function findAgendamento(db, id) {
+    const agendamento = db.agendamentos.find((ag) => ag.id === id);
+    if (!agendamento) throw notFound('Agendamento não encontrado.');
+    return agendamento;
+  }
+
+  function validarHorarios(db, barbeiro, data, horarios) {
+    if (!worksOn(barbeiro, data)) throw unprocessable('O barbeiro não atende na data selecionada.');
+
+    const expediente = new Set(generateSlots(barbeiro.horarioInicial, barbeiro.horarioFinal));
+    const agora = clock();
+    for (const horario of horarios) {
+      if (!expediente.has(horario)) throw unprocessable(`O horário ${horario} está fora do expediente.`);
+      if (isPast(data, horario, agora)) throw unprocessable(`O horário ${horario} já passou.`);
+      if (findOccupant(db.agendamentos, { barbeiroId: barbeiro.id, data, horario })) {
+        throw conflict(`O horário ${horario} não está mais disponível.`);
+      }
+    }
+  }
+
+  function novoAgendamento({ barbeiroId, clienteId = null, servicoId = null, data, horario, status }) {
+    return {
+      id: crypto.randomUUID(),
+      barbeiroId,
+      clienteId,
+      servicoId,
+      data,
+      horarioInicio: horario,
+      horarioFim: slotEnd(horario),
+      status,
+      criadoEm: new Date().toISOString(),
+    };
+  }
+
+  function parseHorarios(value) {
+    const horarios = v.stringArray(value, 'horários', { minItems: 1 });
+    if (horarios.length > MAX_HORARIOS_POR_RESERVA) {
+      throw unprocessable(`Selecione no máximo ${MAX_HORARIOS_POR_RESERVA} horários por vez.`);
+    }
+    return horarios.map((h) => v.time(h)).sort();
+  }
+
+  return {
+    /**
+     * Horários do dia para um barbeiro.
+     * - Administrador/barbeiro: todos os horários com o detalhe de cada ocupação.
+     * - Cliente: horários livres e os próprios agendamentos (ocupações de terceiros são omitidas).
+     */
+    getAgenda(actor, query) {
+      const db = store.snapshot;
+      const data = v.isoDate(query.data);
+      const barbeiro = findBarbeiro(db, resolveBarbeiroId(actor, query.barbeiroId), {
+        exigirAtivo: actor.perfil === ROLES.CLIENTE,
+      });
+
+      if (!worksOn(barbeiro, data)) return { data, atende: false, horarios: [] };
+
+      const agora = clock();
+      const horarios = [];
+      for (const horario of generateSlots(barbeiro.horarioInicial, barbeiro.horarioFinal)) {
+        const ocupante = findOccupant(db.agendamentos, { barbeiroId: barbeiro.id, data, horario });
+        const proprio = ocupante && ocupante.clienteId === actor.id;
+        if (actor.perfil === ROLES.CLIENTE && ocupante && !proprio) continue;
+
+        horarios.push({
+          horario,
+          horarioFim: slotEnd(horario),
+          passado: isPast(data, horario, agora),
+          agendamento: ocupante ? detalhar(db, ocupante) : null,
+        });
+      }
+      return { data, atende: true, horarios };
+    },
+
+    /** Histórico filtrado por período e situação, restrito ao escopo do perfil. */
+    history(actor, query) {
+      const db = store.snapshot;
+      const inicio = v.isoDate(query.inicio, 'data inicial');
+      const fim = v.isoDate(query.fim, 'data final');
+      if (inicio > fim) throw unprocessable('A data inicial deve ser anterior ou igual à data final.');
+      const situacao = v.oneOf(query.situacao ?? SITUACOES.pendentes, 'situação', Object.values(SITUACOES));
+
+      let scope;
+      if (actor.perfil === ROLES.CLIENTE) scope = (ag) => ag.clienteId === actor.id;
+      else if (actor.perfil === ROLES.BARBEIRO) scope = (ag) => ag.barbeiroId === actor.id;
+      else {
+        const barbeiroId = query.barbeiroId ? String(query.barbeiroId) : null;
+        scope = (ag) => !barbeiroId || ag.barbeiroId === barbeiroId;
+      }
+
+      const situacaoOk = situacao === SITUACOES.concluidos
+        ? (ag) => ag.status === STATUS.CONCLUIDO
+        : (ag) => ag.status !== STATUS.CONCLUIDO;
+
+      return db.agendamentos
+        .filter((ag) => scope(ag) && ag.data >= inicio && ag.data <= fim && situacaoOk(ag))
+        .sort((a, b) => a.data.localeCompare(b.data) || a.horarioInicio.localeCompare(b.horarioInicio))
+        .map((ag) => detalhar(db, ag));
+    },
+
+    /**
+     * Cria agendamentos para um ou mais horários de forma atômica (tudo ou nada).
+     * - Cliente: reserva um serviço com um barbeiro.
+     * - Barbeiro: registra atendimento avulso ("Agendado Barbeiro") ou bloqueia horários.
+     */
+    create(actor, body) {
+      const data = v.isoDate(body?.data);
+      const horarios = parseHorarios(body?.horarios);
+
+      if (actor.perfil === ROLES.CLIENTE) {
+        const barbeiroId = v.requiredString(body?.barbeiroId, 'barbeiro');
+        const servicoId = v.requiredString(body?.servicoId, 'serviço');
+        return store.update((db) => {
+          const barbeiro = findBarbeiro(db, barbeiroId, { exigirAtivo: true });
+          const servico = db.servicos.find((s) => s.id === servicoId && s.ativo);
+          if (!servico || !barbeiro.servicoIds.includes(servicoId)) {
+            throw unprocessable('Este serviço não é oferecido pelo barbeiro selecionado.');
+          }
+          validarHorarios(db, barbeiro, data, horarios);
+          const criados = horarios.map((horario) => novoAgendamento({
+            barbeiroId, clienteId: actor.id, servicoId, data, horario, status: STATUS.AGENDADO,
+          }));
+          db.agendamentos.push(...criados);
+          return criados.map((ag) => detalhar(db, ag));
+        });
+      }
+
+      if (actor.perfil === ROLES.BARBEIRO) {
+        const status = v.oneOf(body?.tipo, 'tipo', TIPOS_RESERVA_BARBEIRO);
+        return store.update((db) => {
+          const barbeiro = findBarbeiro(db, actor.id, { exigirAtivo: false });
+          validarHorarios(db, barbeiro, data, horarios);
+          const criados = horarios.map((horario) => novoAgendamento({
+            barbeiroId: barbeiro.id, data, horario, status,
+          }));
+          db.agendamentos.push(...criados);
+          return criados.map((ag) => detalhar(db, ag));
+        });
+      }
+
+      throw forbidden();
+    },
+
+    /** Barbeiro conclui um atendimento seu que não esteja em data futura. */
+    concluir(actor, id) {
+      return store.update((db) => {
+        const agendamento = findAgendamento(db, id);
+        if (agendamento.barbeiroId !== actor.id) throw notFound('Agendamento não encontrado.');
+        if (![STATUS.AGENDADO, STATUS.AGENDADO_BARBEIRO].includes(agendamento.status)) {
+          throw unprocessable(`Atendimentos com status "${agendamento.status}" não podem ser concluídos.`);
+        }
+        if (agendamento.data > clock().date) {
+          throw unprocessable('Não é possível concluir um atendimento de data futura.');
+        }
+        agendamento.status = STATUS.CONCLUIDO;
+        return detalhar(db, agendamento);
+      });
+    },
+
+    /**
+     * Cancela um agendamento mantendo o registro (status "Cancelado"), o que libera o horário.
+     * - Cliente: apenas os próprios agendamentos futuros com status "Agendado".
+     * - Barbeiro: apenas os próprios bloqueios e atendimentos avulsos.
+     */
+    cancelar(actor, id) {
+      return store.update((db) => {
+        const agendamento = findAgendamento(db, id);
+
+        if (actor.perfil === ROLES.CLIENTE) {
+          if (agendamento.clienteId !== actor.id) throw notFound('Agendamento não encontrado.');
+          if (agendamento.status !== STATUS.AGENDADO) {
+            throw unprocessable('Somente agendamentos com status "Agendado" podem ser cancelados.');
+          }
+          if (isPast(agendamento.data, agendamento.horarioInicio, clock())) {
+            throw unprocessable('Não é possível cancelar um agendamento que já passou.');
+          }
+        } else if (actor.perfil === ROLES.BARBEIRO) {
+          if (agendamento.barbeiroId !== actor.id) throw notFound('Agendamento não encontrado.');
+          if (!TIPOS_RESERVA_BARBEIRO.includes(agendamento.status)) {
+            throw unprocessable('Somente bloqueios e atendimentos incluídos pelo barbeiro podem ser cancelados.');
+          }
+        } else {
+          throw forbidden();
+        }
+
+        agendamento.status = STATUS.CANCELADO;
+        agendamento.canceladoEm = new Date().toISOString();
+        return detalhar(db, agendamento);
+      });
+    },
+  };
+}

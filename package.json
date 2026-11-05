@@ -1,8 +1,17 @@
 {
-  "dependencies": {
-    "json-server": "^1.0.0-beta.3"
+  "name": "barberapp",
+  "version": "2.0.0",
+  "description": "Sistema de agendamento para barbearias (Zé Barbeiro).",
+  "private": true,
+  "type": "module",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
-    "start": "json-server --watch data/db.json --static public"
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test",
+    "db:reset": "node scripts/reset-db.js"
   }
 }

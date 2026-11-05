@@ -1,0 +1,661 @@
+{
+  "usuarios": [
+    {
+      "id": "1",
+      "nome": "Barbeiro Administrador",
+      "email": "adm@adm.com.br",
+      "telefone": "(31)97144-8207",
+      "dataNascimento": "",
+      "perfil": "administrador",
+      "senhaHash": "scrypt$16384$8$1$VuT4IFUNZlc1U4s2fqnVNA==$eA0Oy++K9coCAvQXAz6Oxgq4CAWQjUmPCwqMSf+PPwDn4jhoEwX6UeTHrFTM5vPqkQixZw0NdpmhkUEQ6LmZZw=="
+    },
+    {
+      "id": "2",
+      "nome": "Cliente 01",
+      "email": "cliente@cliente.com.br",
+      "telefone": "(31)97144-8208",
+      "dataNascimento": "1986-12-25",
+      "perfil": "cliente",
+      "senhaHash": "scrypt$16384$8$1$YH4lWamjMdyO5MEZ9Ys9vg==$H35Uj8NWSafeafEN02DKO3NDUW+ERnmqaAT+2brEcw1/upBSv5aUOImqvbxQhkfgaZ/v1lEBuWPk1pUmXzpDDg=="
+    },
+    {
+      "id": "ef75",
+      "nome": "Barbeiro 02",
+      "email": "barbeiro@barbeiro.com.br",
+      "telefone": "(31)97144-8208",
+      "dataNascimento": "1986-12-24",
+      "perfil": "barbeiro",
+      "senhaHash": "scrypt$16384$8$1$KkVs4qOCH2hWUQdORZQJ+A==$jm4C+DxXb79o2FPozYEZTl08AuEYg47BCjh3KjPG06+lDxWhZBvzkguLD84vidsKFs4BoY6809C0Cj8smgYkLg=="
+    },
+    {
+      "id": "587a",
+      "nome": "Barbeiro 03",
+      "email": "madrugas@vila.com.br",
+      "telefone": "(31)97144-8209",
+      "dataNascimento": "2024-10-31",
+      "perfil": "barbeiro",
+      "senhaHash": "scrypt$16384$8$1$ZleJdvQPGnVFWXUjm8IYYg==$6PvkLaZ/+e4odGfUSMeCIs3Mxq5FZ2bV7qMlpsH356sE9RQ/1pzhcmy7ss06bLi5E0JvLachRiCrQm4iIivhew=="
+    },
+    {
+      "id": "3",
+      "nome": "Cliente 02",
+      "email": "cliente02@cliente.com.br",
+      "telefone": "(31)97144-8208",
+      "dataNascimento": "1986-12-25",
+      "perfil": "cliente",
+      "senhaHash": "scrypt$16384$8$1$Pvs5XuhcJeT2Ar3SQD7Mew==$fVOnvy0V+UG/mYY0EPdguFesoQE8AIOeA0+/nmKfNCT3PO+gXQ10P+5tIR9m8XuwaJsvlflUd4ZfwmXIjjbGiA=="
+    },
+    {
+      "id": "0eff",
+      "nome": "Cliente 03",
+      "email": "cliente03@cliente.com.br",
+      "telefone": "(31)97144-8208",
+      "dataNascimento": "1990-12-24",
+      "perfil": "cliente",
+      "senhaHash": "scrypt$16384$8$1$Y8LxeYyLxTd/0DxGhlpvcA==$baCpTa0hCgAIFENO7z8jcZ02v5w0EkcwwbEjfW6kjOtgmcHpz8mGS67Q+LAd4M+h5a7ooWivvghlv+0clOLJ5w=="
+    },
+    {
+      "id": "5e36",
+      "nome": "Barbeiro 04",
+      "email": "barbeiro03@barbeiro.com.br",
+      "telefone": "(31)33311-8111",
+      "dataNascimento": "2000-12-24",
+      "perfil": "barbeiro",
+      "senhaHash": "scrypt$16384$8$1$qO0D2UV1/CKj7RpwASNs1Q==$Xy7Cg63q7MWbh6zGuzgM1PONwUoIDHwEEZGxy26GfMeKPKMLVenG4I7cpgwmnIL0S5HgAnlJXTkcW2fWa1tRsg=="
+    },
+    {
+      "id": "4b8b",
+      "nome": "cliente 06",
+      "email": "cliente06@cliente.com.br",
+      "telefone": "(31)33311-8111",
+      "dataNascimento": "2000-12-24",
+      "perfil": "cliente",
+      "senhaHash": "scrypt$16384$8$1$XyKk3gEPV9L6Yp20lRD1AA==$lCPnlNS6uxrgqDyyZD/3p25gMibQ18GlwAVHYCD3cruz7s/Vm1GLQJrNtPdjVwYL2aDkEa22n2dfbnLOgusqjw=="
+    },
+    {
+      "id": "2a71",
+      "nome": "Barbeiro 05",
+      "email": "bariveiro07@barbeiro.com.br",
+      "telefone": "(31)97144-8208",
+      "dataNascimento": "2000-12-24",
+      "perfil": "barbeiro",
+      "senhaHash": "scrypt$16384$8$1$lqkhA142mVmir976bdwVdw==$t8rhdXwVS9WaugrvI8A8dIjFDcxqWHhzIqw5T0lDijxpwkajWzXcQaB4sRzAdVvS13SD6REzCX42+8qG/viG2Q=="
+    }
+  ],
+  "barbeiros": [
+    {
+      "id": "1",
+      "ativo": true,
+      "servicoIds": [
+        "1",
+        "2",
+        "3"
+      ],
+      "diasDisponiveis": [
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta"
+      ],
+      "horarioInicial": "08:00",
+      "horarioFinal": "20:00"
+    },
+    {
+      "id": "ef75",
+      "ativo": true,
+      "servicoIds": [
+        "1",
+        "2",
+        "3"
+      ],
+      "diasDisponiveis": [
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta"
+      ],
+      "horarioInicial": "16:00",
+      "horarioFinal": "19:00"
+    },
+    {
+      "id": "587a",
+      "ativo": true,
+      "servicoIds": [
+        "1",
+        "4",
+        "5"
+      ],
+      "diasDisponiveis": [
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta"
+      ],
+      "horarioInicial": "08:00",
+      "horarioFinal": "12:00"
+    },
+    {
+      "id": "5e36",
+      "ativo": true,
+      "servicoIds": [
+        "2",
+        "4",
+        "6"
+      ],
+      "diasDisponiveis": [
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta"
+      ],
+      "horarioInicial": "08:00",
+      "horarioFinal": "20:00"
+    },
+    {
+      "id": "2a71",
+      "ativo": true,
+      "servicoIds": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "diasDisponiveis": [
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta"
+      ],
+      "horarioInicial": "08:00",
+      "horarioFinal": "12:00"
+    }
+  ],
+  "servicos": [
+    {
+      "id": "1",
+      "nome": "Corte de Cabelo",
+      "valor": 49.99,
+      "duracaoMinutos": 30,
+      "ativo": true
+    },
+    {
+      "id": "2",
+      "nome": "Corte Infantil",
+      "valor": 49.99,
+      "duracaoMinutos": 30,
+      "ativo": true
+    },
+    {
+      "id": "3",
+      "nome": "Barba c/ Navalha",
+      "valor": 49.99,
+      "duracaoMinutos": 30,
+      "ativo": true
+    },
+    {
+      "id": "4",
+      "nome": "Barba Desenhada",
+      "valor": 49.99,
+      "duracaoMinutos": 30,
+      "ativo": true
+    },
+    {
+      "id": "5",
+      "nome": "Hidratação Cabelo",
+      "valor": 49.99,
+      "duracaoMinutos": 30,
+      "ativo": true
+    },
+    {
+      "id": "6",
+      "nome": "Hidratação Barba",
+      "valor": 40.99,
+      "duracaoMinutos": 30,
+      "ativo": true
+    }
+  ],
+  "unidades": [
+    {
+      "id": "1",
+      "nome": "Unidade 01",
+      "endereco": "Rua Carijos, 244, BH/ MG",
+      "telefone": "(31)97144-8206",
+      "email": "unidade01@gmail.com"
+    },
+    {
+      "id": "2",
+      "nome": "Unidade 02",
+      "endereco": "Rua Carijos, 244, BH/ MG",
+      "telefone": "(31)97144-8207",
+      "email": "unidade01@gmail.com"
+    },
+    {
+      "id": "dcdd",
+      "nome": "Unidade 03",
+      "endereco": "Rua carijos 244",
+      "telefone": "(31)97144-8209",
+      "email": "unidade03@unidades.com.br"
+    },
+    {
+      "id": "2e79",
+      "nome": "unidade 04",
+      "endereco": "Rua carijos 244",
+      "telefone": "(31)97144-8209",
+      "email": "unidade04@unidades.com.br"
+    }
+  ],
+  "agendamentos": [
+    {
+      "id": "34843dc4-4164-42ee-a5c4-f862fc5e0807",
+      "barbeiroId": "1",
+      "clienteId": "2",
+      "servicoId": "1",
+      "data": "2024-10-01",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "68aa77e6-f444-454b-aaed-7d67d05d49e0",
+      "barbeiroId": "ef75",
+      "clienteId": "2",
+      "servicoId": "2",
+      "data": "2024-10-01",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "7129d32d-bbd9-482c-a41d-bba3044b0b39",
+      "barbeiroId": "587a",
+      "clienteId": "2",
+      "servicoId": "1",
+      "data": "2024-10-01",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "c5c92967-f7c4-4fbe-a271-cef94f247004",
+      "barbeiroId": "587a",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "08:30",
+      "horarioFim": "09:00",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "abe4aeae-6248-404e-be2d-ee5278bbc4ef",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "08:30",
+      "horarioFim": "09:00",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "210f1181-58ba-4264-a42d-49239526cb06",
+      "barbeiroId": "1",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "09:00",
+      "horarioFim": "09:30",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "72f51ddd-c272-4598-869d-63e99c25db4a",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "10:00",
+      "horarioFim": "10:30",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "8cfe50ec-ff0e-494d-9ce9-a68437bd6c24",
+      "barbeiroId": "1",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "10:30",
+      "horarioFim": "11:00",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "04dec112-158b-4c79-8eda-bdb878d9bcdd",
+      "barbeiroId": "587a",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "10:30",
+      "horarioFim": "11:00",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "8b26b47b-e277-4b58-89aa-6d7f3ea50878",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "10:30",
+      "horarioFim": "11:00",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "0269b0b9-a43b-4cb9-9941-e3a3a5789860",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "11:00",
+      "horarioFim": "11:30",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "8d024f37-7400-4d66-8eac-95a7904b088a",
+      "barbeiroId": "1",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "11:30",
+      "horarioFim": "12:00",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "c929fadd-bd17-4a57-8fdb-f77076e7af23",
+      "barbeiroId": "1",
+      "clienteId": "2",
+      "servicoId": "1",
+      "data": "2024-10-01",
+      "horarioInicio": "13:00",
+      "horarioFim": "13:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "6372b62f-cf8c-48dd-b831-bcdd144c3ae4",
+      "barbeiroId": "1",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-01",
+      "horarioInicio": "14:30",
+      "horarioFim": "15:00",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "3966b8a8-647b-4f95-994a-7da021c90b37",
+      "barbeiroId": "1",
+      "clienteId": "2",
+      "servicoId": "1",
+      "data": "2024-10-01",
+      "horarioInicio": "15:30",
+      "horarioFim": "16:00",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "72c6f7cc-082f-4a7f-9f43-9deb8eee3fa4",
+      "barbeiroId": "1",
+      "clienteId": "3",
+      "servicoId": "1",
+      "data": "2024-10-01",
+      "horarioInicio": "16:00",
+      "horarioFim": "16:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "b6ef7654-55c0-4283-a08b-ae927d36be5d",
+      "barbeiroId": "587a",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-02",
+      "horarioInicio": "10:00",
+      "horarioFim": "10:30",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "dd3485d8-1d61-4732-91f3-0ca6c3bb38c5",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-02",
+      "horarioInicio": "10:00",
+      "horarioFim": "10:30",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "af9d4189-6a1a-4c2d-b6ce-592cc8a8b2c1",
+      "barbeiroId": "ef75",
+      "clienteId": "2",
+      "servicoId": "1",
+      "data": "2024-10-02",
+      "horarioInicio": "11:00",
+      "horarioFim": "11:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "1aebb397-610e-473e-9cd9-7bbf6a69fc56",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-10-31",
+      "horarioInicio": "10:30",
+      "horarioFim": "11:00",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "daddb521-a386-4f2d-8c6a-9208873029c8",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-11-25",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "46cafebc-0219-4e8f-a1cc-5dae79577d13",
+      "barbeiroId": "587a",
+      "clienteId": "2",
+      "servicoId": "5",
+      "data": "2024-11-25",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "da36a7f1-12bf-464f-9e50-c3e4b6d1447b",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-11-25",
+      "horarioInicio": "09:00",
+      "horarioFim": "09:30",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "d2408332-31b4-4933-9e6e-d32ef8b5de70",
+      "barbeiroId": "5e36",
+      "clienteId": "2",
+      "servicoId": "6",
+      "data": "2024-11-26",
+      "horarioInicio": "20:00",
+      "horarioFim": "20:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "e425ec9e-d752-43cf-a9f3-29f6cf873aaa",
+      "barbeiroId": "ef75",
+      "clienteId": "2",
+      "servicoId": "2",
+      "data": "2024-11-28",
+      "horarioInicio": "10:00",
+      "horarioFim": "10:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "ea876c91-e98f-43f4-bf2f-d04231fde312",
+      "barbeiroId": "1",
+      "clienteId": "2",
+      "servicoId": "2",
+      "data": "2024-11-29",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "0c4b57f2-1521-48b1-ad20-9da451d000a6",
+      "barbeiroId": "ef75",
+      "clienteId": "2",
+      "servicoId": "2",
+      "data": "2024-11-29",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "a70c148b-7a87-4885-93f5-6c5e630d0bb1",
+      "barbeiroId": "ef75",
+      "clienteId": "2",
+      "servicoId": "1",
+      "data": "2024-11-29",
+      "horarioInicio": "16:00",
+      "horarioFim": "16:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "ba7c1d25-3f17-4366-ac93-d698caab2958",
+      "barbeiroId": "ef75",
+      "clienteId": "3",
+      "servicoId": "1",
+      "data": "2024-11-29",
+      "horarioInicio": "16:30",
+      "horarioFim": "17:00",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "4881fc9e-8496-4c04-98e3-55a57bc2f695",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-11-29",
+      "horarioInicio": "17:30",
+      "horarioFim": "18:00",
+      "status": "Agendado Barbeiro",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "ddf4d7e0-9dca-4852-bd48-42216045de88",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-11-29",
+      "horarioInicio": "18:30",
+      "horarioFim": "19:00",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "4c3ed35e-cf1e-42ac-9dd5-15f4efd6c92b",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-11-29",
+      "horarioInicio": "19:00",
+      "horarioFim": "19:30",
+      "status": "Bloqueado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "1355b09e-7446-4a95-988a-810ceba165c0",
+      "barbeiroId": "1",
+      "clienteId": "2",
+      "servicoId": "2",
+      "data": "2024-12-02",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "50f46fd7-fc5c-440c-907e-72a16163d48c",
+      "barbeiroId": "5e36",
+      "clienteId": "4b8b",
+      "servicoId": "4",
+      "data": "2024-12-02",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "76182a41-2ae6-4fd9-8796-6a8817414f44",
+      "barbeiroId": "ef75",
+      "clienteId": null,
+      "servicoId": null,
+      "data": "2024-12-02",
+      "horarioInicio": "17:00",
+      "horarioFim": "17:30",
+      "status": "Concluído",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "491cf2f9-7a9d-4cc6-98ba-8cdae164f1c5",
+      "barbeiroId": "1",
+      "clienteId": "2",
+      "servicoId": "2",
+      "data": "2024-12-03",
+      "horarioInicio": "08:00",
+      "horarioFim": "08:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "ced2ee13-cf93-496f-9de3-3a15b37dbf48",
+      "barbeiroId": "587a",
+      "clienteId": "2",
+      "servicoId": "5",
+      "data": "2024-12-31",
+      "horarioInicio": "10:00",
+      "horarioFim": "10:30",
+      "status": "Agendado",
+      "criadoEm": "2024-10-01T00:00:00.000Z"
+    }
+  ]
+}
