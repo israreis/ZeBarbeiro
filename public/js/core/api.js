@@ -49,6 +49,42 @@ export async function request(method, path, { body, query, blob } = {}) {
   throw new ApiError(response.status, data?.erro ?? 'Não foi possível concluir a operação.');
 }
 
+/**
+ * Baixa um arquivo gerado pela API (ex.: relatório em PDF) usando o token da sessão.
+ * O nome do arquivo vem do cabeçalho Content-Disposition.
+ */
+export async function download(path, query) {
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, value);
+  }
+  const session = getSession();
+  let response;
+  try {
+    response = await fetch(url, { headers: session ? { Authorization: `Bearer ${session.token}` } : {} });
+  } catch {
+    throw new ApiError(0, 'Não foi possível conectar ao servidor. Verifique sua conexão.');
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    if (response.status === 401 && session) {
+      clearSession();
+      redirectToLogin();
+    }
+    throw new ApiError(response.status, data?.erro ?? 'Não foi possível gerar o arquivo.');
+  }
+
+  const fileName = /filename="([^"]+)"/.exec(response.headers.get('content-disposition') ?? '')?.[1] ?? 'arquivo';
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
 export const api = {
   get: (path, query) => request('GET', path, { query }),
   post: (path, body) => request('POST', path, { body }),

@@ -9,13 +9,17 @@ import {
 /** Itens de menu por perfil. `key` é comparado com o atributo data-nav da página. */
 const NAV_ITEMS = Object.freeze({
   administrador: [
+    { key: 'painel', label: 'Painel', href: 'painel.html' },
     { key: 'barbeiros', label: 'Barbeiros', href: 'admin-barbeiros.html' },
     { key: 'servicos', label: 'Serviços', href: 'admin-servicos.html' },
     { key: 'atendimentos', label: 'Atendimentos', href: 'admin-agenda.html' },
+    { key: 'relatorios', label: 'Relatórios', href: 'relatorios.html' },
   ],
   barbeiro: [
+    { key: 'painel', label: 'Painel', href: 'painel.html' },
     { key: 'agenda', label: 'Minha agenda', href: 'barbeiro-agenda.html' },
     { key: 'historico', label: 'Histórico', href: 'barbeiro-historico.html' },
+    { key: 'relatorios', label: 'Relatórios', href: 'relatorios.html' },
   ],
   cliente: [
     { key: 'agendar', label: 'Agendar', href: 'cliente-agendar.html' },
@@ -140,7 +144,7 @@ function bindLogout() {
 /**
  * Protege a página para o perfil informado e monta cabeçalho e rodapé.
  * Usuários de outro perfil são levados à própria página inicial.
- * @param {'administrador'|'barbeiro'|'cliente'|null} role perfil exigido (null = qualquer perfil)
+ * @param {string|string[]|null} role perfil (ou perfis) com acesso à página; null = qualquer perfil
  * @returns {Promise<object|null>} usuário logado, ou null se houve redirecionamento
  */
 export async function initAppShell(role) {
@@ -149,7 +153,8 @@ export async function initAppShell(role) {
     redirectToLogin();
     return null;
   }
-  if (role && session.usuario.perfil !== role) {
+  const allowed = role === null ? null : [role].flat();
+  if (allowed && !allowed.includes(session.usuario.perfil)) {
     window.location.replace(HOME_BY_ROLE[session.usuario.perfil] ?? 'index.html');
     return null;
   }

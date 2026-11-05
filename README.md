@@ -23,8 +23,8 @@ O projeto não tem dependências externas: o back-end usa apenas módulos nativo
 | Perfil | O que pode fazer |
 | --- | --- |
 | **Cliente** | Criar conta, escolher o serviço e ver os barbeiros (com foto) que têm horários livres na data, agendar, cancelar agendamentos futuros e consultar o histórico. |
-| **Barbeiro** | Ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
-| **Administrador** | Cadastrar e editar barbeiros (foto, dias, horários e serviços) e serviços; consultar a agenda e o histórico de qualquer barbeiro. |
+| **Barbeiro** | Acompanhar o próprio painel de indicadores, exportar os próprios relatórios em PDF e Excel, ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
+| **Administrador** | Acompanhar o painel com gráficos e destaques da barbearia, consultar e exportar relatórios de todos os barbeiros (PDF e Excel), cadastrar e editar barbeiros (foto, dias, horários e serviços) e serviços; consultar a agenda e o histórico de qualquer barbeiro. |
 
 Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha. Barbeiros também trocam a própria foto por ali.
 
@@ -82,6 +82,7 @@ Todos usam a senha **`barber123`**.
 │   │   ├── components/       # app-shell, crud-page, history-page, auth-form, status-badge
 │   │   └── pages/            # Um módulo por página
 │   └── *.html
+├── server/reports/           # Geração de PDF e Excel sem dependências (ver abaixo)
 ├── scripts/
 │   └── reset-db.js
 ├── server/
@@ -157,7 +158,19 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 | GET | `/agendamentos?inicio=&fim=&situacao=&barbeiroId=` | autenticado | Histórico (`situacao`: `pendentes` ou `concluidos`). |
 | POST | `/agendamentos` | cliente, barbeiro | Reserva (cliente); atendimento manual com cliente e serviço, ou bloqueio (barbeiro). |
 | PATCH | `/agendamentos/:id/concluir` | barbeiro | Conclui um atendimento. |
+| GET | `/relatorios?inicio=&fim=&barbeiroId=` | barbeiro, administrador | Indicadores, gráficos, destaques e lista de atendimentos do período. |
+| GET | `/relatorios/pdf?...` | barbeiro, administrador | Relatório em PDF com a identidade visual do site. |
+| GET | `/relatorios/xlsx?...` | barbeiro, administrador | Planilha Excel com os dados para cálculos. |
 | PATCH | `/agendamentos/:id/cancelar` | cliente, barbeiro | Cancela (o registro é mantido com status `Cancelado`). |
+
+## Painel e relatórios
+
+- **Painel** (`painel.html`): indicadores (faturamento, atendimentos concluídos, ticket médio e taxa de cancelamento, comparados ao período anterior de mesmo tamanho), gráficos de faturamento por dia, serviços, dias da semana, horários de pico e, para o administrador, faturamento por barbeiro, além de destaques escritos automaticamente.
+- **Relatórios** (`relatorios.html`): os mesmos indicadores, desempenho por barbeiro e a lista de atendimentos, com exportação em **PDF** e **Excel**.
+- **Escopo**: o administrador vê todos os barbeiros (ou filtra um); o barbeiro vê e exporta apenas os próprios dados — o servidor ignora qualquer tentativa de pedir dados de outro barbeiro.
+- **PDF**: gerado no servidor, com cabeçalho no tom café, logo, detalhes em latão, cartões de indicadores, destaques e tabelas paginadas (cabeçalho repetido e "Página x de y").
+- **Excel**: abas *Atendimentos*, *Por barbeiro* (administrador), *Por serviço* e *Por dia*; datas e valores são números de verdade (somas e tabelas dinâmicas funcionam direto), com cabeçalho fixo e filtro. Textos que começam com `=`, `+`, `-` ou `@` são neutralizados para não virarem fórmulas.
+- O faturamento considera atendimentos **concluídos**. O valor do serviço é gravado no momento do agendamento, então mudar o preço depois não altera relatórios passados.
 
 ## Regras de negócio
 
