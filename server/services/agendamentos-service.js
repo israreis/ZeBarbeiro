@@ -94,18 +94,13 @@ export function createAgendamentosService({ store, clock }) {
   }
 
   /**
-   * Cliente de um atendimento incluído pelo barbeiro: um cliente cadastrado (clienteId)
-   * ou um cliente sem cadastro, identificado por nome e, opcionalmente, telefone.
+   * Cliente de um atendimento incluído pelo barbeiro: apenas nome (e celular opcional).
+   * Não precisa ter cadastro — o objetivo é marcar o horário na agenda.
    */
-  function parseClienteManual(db, body) {
-    if (body?.clienteId) {
-      const cliente = db.usuarios.find((u) => u.id === body.clienteId && u.perfil === ROLES.CLIENTE);
-      if (!cliente) throw unprocessable('Cliente não encontrado.');
-      return { clienteId: cliente.id };
-    }
+  function parseClienteManual(body) {
     return {
       clienteNome: v.requiredString(body?.clienteNome, 'nome do cliente'),
-      clienteTelefone: body?.clienteTelefone ? v.phone(body.clienteTelefone, 'telefone do cliente') : undefined,
+      clienteTelefone: body?.clienteTelefone ? v.phone(body.clienteTelefone, 'celular do cliente') : undefined,
     };
   }
 
@@ -204,10 +199,10 @@ export function createAgendamentosService({ store, clock }) {
         const status = v.oneOf(body?.tipo, 'tipo', TIPOS_RESERVA_BARBEIRO);
         const isAtendimento = status === STATUS.AGENDADO_BARBEIRO;
         const servicoId = isAtendimento ? v.requiredString(body?.servicoId, 'serviço') : null;
+        // Atendimento incluído pelo barbeiro exige cliente e serviço; bloqueio não tem nenhum dos dois.
+        const cliente = isAtendimento ? parseClienteManual(body) : {};
         return store.update((db) => {
           const barbeiro = findBarbeiro(db, actor.id, { exigirAtivo: false });
-          // Atendimento incluído pelo barbeiro exige cliente e serviço; bloqueio não tem nenhum dos dois.
-          const cliente = isAtendimento ? parseClienteManual(db, body) : {};
           if (isAtendimento) findServicoDoBarbeiro(db, barbeiro, servicoId);
           validarHorarios(db, barbeiro, data, horarios);
           const criados = horarios.map((horario) => novoAgendamento({

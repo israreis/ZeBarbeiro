@@ -83,18 +83,15 @@
               <label for="atendimento-horario" class="form-label">Horário</label>
               <select class="form-select" id="atendimento-horario" name="horario" required></select>
             </div>
-            <div class="col-12">
-              <label for="atendimento-cliente" class="form-label">Cliente</label>
-              <select class="form-select" id="atendimento-cliente" name="clienteId" required></select>
-            </div>
-            <div class="col-md-7 reveal" data-cliente-avulso hidden>
+            <div class="col-md-7">
               <label for="atendimento-cliente-nome" class="form-label">Nome do cliente</label>
-              <input type="text" class="form-control" id="atendimento-cliente-nome" name="clienteNome" maxlength="120">
+              <input type="text" class="form-control" id="atendimento-cliente-nome" name="clienteNome" maxlength="120"
+                autocomplete="off" required>
             </div>
-            <div class="col-md-5 reveal" data-cliente-avulso hidden>
+            <div class="col-md-5">
               <label for="atendimento-cliente-telefone" class="form-label">Celular <span class="form-hint">(opcional)</span></label>
               <input type="tel" class="form-control" id="atendimento-cliente-telefone" name="clienteTelefone"
-                placeholder="(31)99999-9999">
+                placeholder="(31)99999-9999" autocomplete="off">
             </div>
             <div class="col-12">
               <label for="atendimento-servico" class="form-label">Serviço</label>

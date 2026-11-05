@@ -12,7 +12,6 @@ import { createBarbeirosService } from './services/barbeiros-service.js';
 import { createServicosService } from './services/servicos-service.js';
 import { createUnidadesService } from './services/unidades-service.js';
 import { createAgendamentosService } from './services/agendamentos-service.js';
-import { createClientesService } from './services/clientes-service.js';
 
 /**
  * Monta a aplicação (sem iniciar a escuta), permitindo uso em testes.
@@ -31,7 +30,6 @@ export function createApp({ store, config, clock, logger = console }) {
     barbeiros: createBarbeirosService({ store, sessions }),
     servicos: createServicosService({ store }),
     unidades: createUnidadesService({ store }),
-    clientes: createClientesService({ store }),
     agendamentos: createAgendamentosService({ store, clock: now }),
   };
   const router = buildRouter({ sessions, store, services });

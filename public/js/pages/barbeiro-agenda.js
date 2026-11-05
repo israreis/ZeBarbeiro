@@ -9,7 +9,6 @@ import { notify, notifyError, notifySuccess } from '../core/notify.js';
 import { statusBadge } from '../components/status-badge.js';
 import { bindSlotSelection } from '../components/slot-selection.js';
 
-const CLIENTE_SEM_CADASTRO = '__sem-cadastro__';
 const STATUS_INCLUSAO = STATUS.AGENDADO_BARBEIRO;
 
 /**
@@ -36,33 +35,27 @@ const SELECTION_ACTIONS = {
 
 const isSelectable = (slot) => Object.values(SELECTION_ACTIONS).some((action) => action.accepts(slot));
 
-/** Modal de inclusão manual de atendimento (cliente no balcão, telefone etc.). */
+/**
+ * Modal de inclusão manual de atendimento: marca na agenda do barbeiro logado um horário
+ * para um cliente identificado apenas pelo nome (não precisa ter cadastro).
+ */
 function createNovoAtendimento({ usuario, onCreated }) {
   const modalElement = byId('modal-atendimento');
   const form = byId('form-atendimento');
   const submit = form.querySelector('[type="submit"]');
-  const avulsoFields = form.querySelectorAll('[data-cliente-avulso]');
   let servicos = [];
 
   applyPhoneMask(form.elements.clienteTelefone);
   form.elements.data.min = todayIso();
   form.querySelector('[data-resumo-status]').textContent = 'Agendado pelo barbeiro';
 
-  async function loadOptions() {
-    const [barbeiros, clientes] = await Promise.all([api.get('/barbeiros'), api.get('/clientes')]);
+  /** Serviços ativos que o barbeiro logado oferece. */
+  async function loadServicos() {
+    const barbeiros = await api.get('/barbeiros');
     servicos = barbeiros.find((b) => b.id === usuario.id)?.servicos ?? [];
     setOptions(form.elements.servicoId, servicos, {
       placeholder: servicos.length ? 'Escolha o serviço' : 'Nenhum serviço ativo vinculado a você',
     });
-
-    const clienteSelect = form.elements.clienteId;
-    clienteSelect.replaceChildren(
-      el('option', { value: '', text: 'Escolha o cliente', disabled: true, selected: true }),
-      el('option', { value: CLIENTE_SEM_CADASTRO, text: 'Cliente sem cadastro' }),
-      el('optgroup', { label: 'Clientes cadastrados' }, clientes.map((c) => el('option', {
-        value: c.id, text: c.telefone ? `${c.nome} (${c.telefone})` : c.nome,
-      }))),
-    );
   }
 
   /** Lista apenas os horários livres e futuros da data escolhida. */
@@ -87,34 +80,25 @@ function createNovoAtendimento({ usuario, onCreated }) {
     }
   }
 
-  function syncClienteAvulso() {
-    const avulso = form.elements.clienteId.value === CLIENTE_SEM_CADASTRO;
-    avulsoFields.forEach((field) => { field.hidden = !avulso; });
-    form.elements.clienteNome.required = avulso;
-  }
-
   function syncResumo() {
     const servico = servicos.find((s) => s.id === form.elements.servicoId.value);
     form.querySelector('[data-resumo-valor]').textContent = servico ? formatCurrency(servico.valor) : '—';
   }
 
   form.elements.data.addEventListener('change', loadHorarios);
-  form.elements.clienteId.addEventListener('change', syncClienteAvulso);
   form.elements.servicoId.addEventListener('change', syncResumo);
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!isFormValid(form)) return;
 
-    const clienteId = form.elements.clienteId.value;
     const payload = {
       tipo: STATUS_INCLUSAO,
       data: form.elements.data.value,
       horarios: [form.elements.horario.value],
       servicoId: form.elements.servicoId.value,
-      ...(clienteId === CLIENTE_SEM_CADASTRO
-        ? { clienteNome: value(form, 'clienteNome'), clienteTelefone: value(form, 'clienteTelefone') || undefined }
-        : { clienteId }),
+      clienteNome: value(form, 'clienteNome'),
+      clienteTelefone: value(form, 'clienteTelefone') || undefined,
     };
 
     withBusy(submit, async () => {
@@ -130,20 +114,18 @@ function createNovoAtendimento({ usuario, onCreated }) {
     });
   });
 
-  let optionsLoaded = false;
+  let servicosCarregados = false;
   return {
     async open(data) {
       form.reset();
-      syncClienteAvulso();
       syncResumo();
       form.elements.data.value = data && data >= todayIso() ? data : todayIso();
       modal.show(modalElement);
       try {
-        if (!optionsLoaded) {
-          await loadOptions();
-          optionsLoaded = true;
+        if (!servicosCarregados) {
+          await loadServicos();
+          servicosCarregados = true;
         } else {
-          form.elements.clienteId.selectedIndex = 0;
           form.elements.servicoId.selectedIndex = 0;
         }
       } catch (error) {

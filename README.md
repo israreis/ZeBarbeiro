@@ -23,7 +23,7 @@ O projeto não tem dependências externas: o back-end usa apenas módulos nativo
 | Perfil | O que pode fazer |
 | --- | --- |
 | **Cliente** | Criar conta, agendar um ou mais horários, cancelar agendamentos futuros e consultar o histórico. |
-| **Barbeiro** | Ver a agenda do dia, incluir atendimentos manualmente (cliente cadastrado ou sem cadastro), bloquear horários, concluir atendimentos e consultar o histórico. |
+| **Barbeiro** | Ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
 | **Administrador** | Cadastrar e editar barbeiros (dias, horários e serviços), serviços e unidades; consultar a agenda e o histórico de qualquer barbeiro. |
 
 Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha.
@@ -142,7 +142,6 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 | PUT | `/auth/me` | autenticado | Edita nome, e-mail, celular e nascimento (trocar o e-mail exige `senhaAtual`). |
 | PUT | `/auth/senha` | autenticado | Altera a senha (`senhaAtual`, `novaSenha`). |
 | POST | `/clientes` | público | Cadastro de cliente. |
-| GET | `/clientes` | barbeiro, administrador | Clientes cadastrados (id, nome e celular). |
 | GET | `/barbeiros` | autenticado | Lista completa (admin) ou barbeiros ativos com seus serviços. |
 | GET / POST / PUT | `/barbeiros[/:id]` | administrador | Consulta, cadastro e edição. |
 | GET | `/servicos` | autenticado | Todos (admin) ou somente ativos. |
@@ -161,7 +160,7 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 - Reservas de vários horários são atômicas: ou todos são criados, ou nenhum.
 - Clientes veem apenas horários livres e os próprios agendamentos; ocupações de outros clientes não são expostas.
 - Clientes cancelam apenas os próprios agendamentos futuros com status `Agendado`.
-- O barbeiro inclui atendimentos para um cliente cadastrado ou sem cadastro (nome e celular opcional), escolhendo um serviço que ele oferece; o valor vem do serviço e o status é "Agendado pelo barbeiro".
+- O barbeiro inclui atendimentos digitando o nome do cliente (celular opcional; não precisa ter cadastro) e escolhendo um serviço que ele oferece. O horário fica ocupado na hora, o valor vem do serviço e o status é "Agendado pelo barbeiro".
 - Barbeiros cancelam apenas bloqueios e atendimentos incluídos por eles, e só concluem atendimentos de hoje ou de datas anteriores.
 - Cancelamentos liberam o horário e permanecem no histórico.
 - O "agora" considera o fuso `America/Sao_Paulo` (configurável).
