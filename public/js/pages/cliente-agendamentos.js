@@ -37,5 +37,6 @@ if (await initAppShell('cliente')) {
     columns: ['data', 'horario', 'barbeiro', 'servico', 'valor', 'status'],
     rowAction: cancelButton,
     range: { inicio: addDaysIso(hoje, -30), fim: addDaysIso(hoje, 60) },
+    emptyMessage: 'Nenhum agendamento nesse período. Ajuste as datas ou a situação.',
   });
 }

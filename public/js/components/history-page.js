@@ -26,9 +26,14 @@ const COLUMN_DEFINITIONS = Object.freeze({
  * @param {(agendamento: object, reload: () => Promise<void>) => Node|null} [options.rowAction]
  *   conteúdo de uma coluna extra de ações (ex.: botão de cancelar)
  * @param {{inicio: string, fim: string}} [options.range] período inicial do filtro
+ * @param {string} [options.emptyMessage] texto quando não há resultados
  */
 export async function initHistoryPage({
-  columns, barberFilter = false, rowAction, range = currentMonthRange(),
+  columns,
+  barberFilter = false,
+  rowAction,
+  range = currentMonthRange(),
+  emptyMessage = 'Nenhum atendimento nesse período. Ajuste as datas ou a situação.',
 }) {
   const form = byId('form-historico');
   const tbody = byId('tabela-historico');
@@ -59,11 +64,9 @@ export async function initHistoryPage({
         situacao: form.elements.situacao.value,
         barbeiroId: barberFilter ? value(form, 'barbeiroId') : undefined,
       });
-      renderRows(tbody, agendamentos, columnDefs, {
-        emptyMessage: 'Nenhum atendimento nesse período. Ajuste as datas ou a situação.',
-      });
+      renderRows(tbody, agendamentos, columnDefs, { emptyMessage });
     } catch (error) {
-      renderRows(tbody, [], columnDefs, { emptyMessage: 'Não foi possível carregar os atendimentos.' });
+      renderRows(tbody, [], columnDefs, { emptyMessage: 'Não foi possível carregar os dados. Tente novamente.' });
       notifyError(error);
     }
   }

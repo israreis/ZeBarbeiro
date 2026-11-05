@@ -1,6 +1,6 @@
 import { api } from '../core/api.js';
 import { byId, el } from '../core/dom.js';
-import { notifyError } from '../core/notify.js';
+import { notifyError, showPendingNotification } from '../core/notify.js';
 import {
   HOME_BY_ROLE, clearSession, getSession, redirectToLogin, updateSessionUser,
 } from '../core/session.js';
@@ -19,7 +19,7 @@ const NAV_ITEMS = Object.freeze({
   ],
   cliente: [
     { key: 'agendar', label: 'Agendar', href: 'cliente-agendar.html' },
-    { key: 'atendimentos', label: 'Meus atendimentos', href: 'cliente-atendimentos.html' },
+    { key: 'agendamentos', label: 'Meus agendamentos', href: 'cliente-agendamentos.html' },
   ],
 });
 
@@ -160,5 +160,6 @@ export async function initAppShell(role) {
   byId('app-footer').replaceWith(fromTemplate(FOOTER_TEMPLATE));
   bindLogout();
   document.body.classList.add('is-ready');
+  showPendingNotification();
   return usuario;
 }

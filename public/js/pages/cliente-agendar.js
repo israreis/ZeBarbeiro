@@ -5,7 +5,7 @@ import {
 } from '../core/dom.js';
 import { isFormValid, value } from '../core/forms.js';
 import { formatCurrency, formatDateLong, todayIso } from '../core/format.js';
-import { notifyError, notifySuccess } from '../core/notify.js';
+import { notifyAfterRedirect, notifyError } from '../core/notify.js';
 import { avatar } from '../components/avatar.js';
 
 const QUALQUER_BARBEIRO = '';
@@ -121,6 +121,7 @@ if (usuario) {
     }
   }
 
+  /** Confirma o agendamento e leva o cliente para "Meus agendamentos". */
   async function confirm() {
     const slot = selectedSlot();
     if (!slot) return;
@@ -131,11 +132,13 @@ if (usuario) {
         data: disponibilidade.data,
         horarios: [slot.horario],
       });
-      notifySuccess(`Agendado: ${formatDateLong(disponibilidade.data)} às ${slot.horario} com ${slot.barbeiro.nome}.`);
     } catch (error) {
       notifyError(error);
+      await search(); // o horário pode ter sido ocupado por outra pessoa
+      return;
     }
-    await search();
+    notifyAfterRedirect(`Agendado: ${formatDateLong(disponibilidade.data)} às ${slot.horario} com ${slot.barbeiro.nome}.`);
+    window.location.assign('cliente-agendamentos.html');
   }
 
   results.addEventListener('change', updateBar);
