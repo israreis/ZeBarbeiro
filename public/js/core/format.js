@@ -68,3 +68,10 @@ export function nowTime() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
+
+/** Idade completa (em anos) de quem nasceu em `birthIso`, na data `todayIso`. */
+export function ageOn(birthIso, todayIsoDate) {
+  const [by, bm, bd] = birthIso.split('-').map(Number);
+  const [ty, tm, td] = todayIsoDate.split('-').map(Number);
+  return ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0);
+}

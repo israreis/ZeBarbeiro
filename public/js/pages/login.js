@@ -2,7 +2,8 @@ import { api } from '../core/api.js';
 import { byId, withBusy } from '../core/dom.js';
 import { isFormValid, rawValue, value } from '../core/forms.js';
 import { HOME_BY_ROLE, getSession, saveSession } from '../core/session.js';
-import { bindPasswordToggles, errorMessage, setFormError } from '../components/auth-form.js';
+import { errorMessage, setFormError } from '../components/auth-form.js';
+import { enhanceForms } from '../core/form-enhancements.js';
 
 const session = getSession();
 if (session) {
@@ -11,7 +12,7 @@ if (session) {
 } else {
   const form = byId('form-login');
   const submit = form.querySelector('[type="submit"]');
-  bindPasswordToggles(form);
+  enhanceForms(form);
 
   // E-mail informado na URL (ex.: vindo do cadastro) já vem preenchido.
   const emailFromUrl = new URLSearchParams(window.location.search).get('email');

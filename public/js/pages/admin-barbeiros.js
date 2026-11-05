@@ -24,20 +24,22 @@ function toggleCreateOnlyFields(form, isCreate) {
   byId('label-senha').textContent = isCreate ? 'Senha' : 'Nova senha (opcional)';
 }
 
-/** Um "chip" com checkbox para cada serviço cadastrado. */
+/** Um "chip" com checkbox para cada serviço ativo. */
 function renderServiceOptions(container, servicos) {
   container.replaceChildren(...servicos.map((servico) => {
     const id = `servico-${servico.id}`;
     return el('div', { className: 'chip chip-service' }, [
       el('input', { type: 'checkbox', name: 'servicoIds', value: servico.id, id }),
       el('label', { htmlFor: id }, [
-        el('span', { text: servico.ativo ? servico.nome : `${servico.nome} (inativo)` }),
+        el('span', { text: servico.nome }),
         el('span', { className: 'chip-meta', text: formatCurrency(servico.valor) }),
       ]),
     ]);
   }));
   if (!servicos.length) {
-    container.append(el('p', { className: 'form-hint mb-0', text: 'Cadastre um serviço antes de adicionar barbeiros.' }));
+    container.append(el('p', {
+      className: 'form-hint mb-0', text: 'Cadastre ou ative um serviço antes de adicionar barbeiros.',
+    }));
   }
 }
 
@@ -119,6 +121,9 @@ function describeSchedule(barbeiro) {
 if (await initAppShell('administrador')) {
   const form = byId('form-registro');
   const photo = createPhotoField(form);
+  // Serviços inativos não aparecem no formulário, mas os vínculos já existentes são preservados
+  // ao salvar (assim, se o serviço for reativado, o barbeiro continua oferecendo-o).
+  let servicosInativos = new Set();
   applyPhoneMask(form.elements.telefone);
 
   // Some a mensagem de erro do grupo assim que o usuário marca uma opção.
@@ -140,7 +145,9 @@ if (await initAppShell('administrador')) {
 
     async beforeLoad() {
       try {
-        renderServiceOptions(byId('barbeiro-servicos'), await api.get('/servicos'));
+        const servicos = await api.get('/servicos');
+        servicosInativos = new Set(servicos.filter((s) => !s.ativo).map((s) => s.id));
+        renderServiceOptions(byId('barbeiro-servicos'), servicos.filter((s) => s.ativo));
       } catch (error) {
         notifyError(error);
       }
@@ -186,7 +193,10 @@ if (await initAppShell('administrador')) {
         telefone: value(target, 'telefone'),
         dataNascimento: value(target, 'dataNascimento'),
         ativo: target.elements.ativo.value === 'true',
-        servicoIds: checkedValues(target, 'servicoIds'),
+        servicoIds: [
+          ...checkedValues(target, 'servicoIds'),
+          ...(barbeiro?.servicoIds ?? []).filter((id) => servicosInativos.has(id)),
+        ],
         diasDisponiveis: checkedValues(target, 'diasDisponiveis'),
         horarioInicial: value(target, 'horarioInicial'),
         horarioFinal: value(target, 'horarioFinal'),

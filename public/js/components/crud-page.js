@@ -7,7 +7,7 @@ import { notifyError, notifySuccess } from '../core/notify.js';
 
 /**
  * Página de cadastro (listagem + modal único para incluir/editar).
- * Usada pelas telas administrativas de barbeiros, serviços e unidades,
+ * Usada pelas telas administrativas de barbeiros e serviços,
  * eliminando o código duplicado entre elas.
  *
  * @param {object} options

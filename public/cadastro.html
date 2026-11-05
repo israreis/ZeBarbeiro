@@ -31,6 +31,7 @@
         <a class="auth-back" href="index.html">Voltar para o site</a>
         <h1 class="auth-title">Criar conta</h1>
         <p class="auth-subtitle">Leva menos de um minuto. Depois é só escolher o horário.</p>
+        <p class="form-hint required-legend"><span class="required-mark" aria-hidden="true">*</span> Campos obrigatórios</p>
 
         <form id="form-cadastro" class="auth-form" novalidate>
           <div class="form-alert" role="alert" data-form-alert hidden></div>
@@ -54,21 +55,24 @@
                 placeholder="(31)99999-9999" autocomplete="tel" required>
             </div>
             <div class="field">
-              <label for="cadastro-nascimento" class="form-label">Nascimento <span class="form-hint">(opcional)</span></label>
-              <input type="date" class="form-control" id="cadastro-nascimento" name="dataNascimento" autocomplete="bday">
+              <label for="cadastro-nascimento" class="form-label">Data de nascimento</label>
+              <input type="date" class="form-control" id="cadastro-nascimento" name="dataNascimento" autocomplete="bday"
+                required>
             </div>
           </div>
 
           <div class="field">
             <label for="cadastro-senha" class="form-label">Senha</label>
-            <div class="password-field">
-              <input type="password" class="form-control" id="cadastro-senha" name="senha" minlength="8"
-                autocomplete="new-password" required aria-describedby="cadastro-senha-dica">
-              <button type="button" class="password-toggle" data-toggle-password="cadastro-senha"
-                aria-controls="cadastro-senha" aria-pressed="false">Mostrar</button>
-            </div>
+            <input type="password" class="form-control" id="cadastro-senha" name="senha" minlength="8"
+              autocomplete="new-password" required aria-describedby="cadastro-senha-dica">
             <div class="strength" data-strength aria-hidden="true"><span></span><span></span><span></span></div>
             <p class="form-hint mt-1 mb-0" id="cadastro-senha-dica">Use pelo menos 8 caracteres, misturando letras e números.</p>
+          </div>
+
+          <div class="field">
+            <label for="cadastro-confirmar-senha" class="form-label">Confirmar senha</label>
+            <input type="password" class="form-control" id="cadastro-confirmar-senha" name="confirmarSenha"
+              autocomplete="new-password" required>
           </div>
 
           <button type="submit" class="btn-app auth-submit mt-2">Criar conta</button>

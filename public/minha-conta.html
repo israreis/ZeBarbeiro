@@ -32,6 +32,7 @@
         <section class="col-lg-7" aria-labelledby="titulo-dados">
           <form id="form-perfil" class="panel panel-form" novalidate>
             <h2 class="panel-title" id="titulo-dados">Dados pessoais</h2>
+            <p class="form-hint required-legend"><span class="required-mark" aria-hidden="true">*</span> Campos obrigatórios</p>
             <div class="row g-3">
               <div class="col-12">
                 <label for="perfil-nome" class="form-label">Nome completo</label>
@@ -44,8 +45,9 @@
                   placeholder="(31)99999-9999" autocomplete="tel" required>
               </div>
               <div class="col-md-6">
-                <label for="perfil-nascimento" class="form-label">Nascimento <span class="form-hint">(opcional)</span></label>
-                <input type="date" class="form-control" id="perfil-nascimento" name="dataNascimento" autocomplete="bday">
+                <label for="perfil-nascimento" class="form-label">Data de nascimento</label>
+                <input type="date" class="form-control" id="perfil-nascimento" name="dataNascimento" autocomplete="bday"
+                  required>
               </div>
               <div class="col-12">
                 <label for="perfil-email" class="form-label">E-mail de acesso</label>

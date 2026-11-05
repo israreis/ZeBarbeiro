@@ -59,6 +59,19 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Barras de rolagem ocultas em toda a aplicação (a rolagem continua funcionando
+   com mouse, toque e teclado). */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -575,4 +588,50 @@ input[type='time']::-webkit-calendar-picker-indicator {
   border-color: #dd9686;
   background: #dd9686;
   color: var(--espresso);
+}
+
+/* ---------- Campos de senha e obrigatórios ---------- */
+
+.password-field {
+  position: relative;
+}
+
+.password-field .form-control {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sand);
+  transform: translateY(-50%);
+  transition: color var(--duration) var(--ease-out);
+}
+
+.password-toggle:hover {
+  color: var(--brass-bright);
+}
+
+/* Olho aberto = mostrar senha; olho cortado = ocultar senha (estado visível) */
+.password-toggle[aria-pressed='false'] .eye-slash {
+  display: none;
+}
+
+.required-mark {
+  margin-left: 0.2rem;
+  color: var(--brass-bright);
+  font-weight: 700;
+}
+
+.required-legend {
+  margin: 0 0 1rem;
 }

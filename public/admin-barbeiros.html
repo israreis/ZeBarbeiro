@@ -55,6 +55,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
+          <p class="form-hint required-legend"><span class="required-mark" aria-hidden="true">*</span> Campos obrigatórios</p>
           <h3 class="modal-section-title">Dados pessoais</h3>
           <div class="photo-field mb-3">
             <div class="photo-preview" data-photo-preview></div>
@@ -95,8 +96,8 @@
               <input type="password" class="form-control" id="barbeiro-confirmar-senha" name="confirmarSenha" autocomplete="new-password">
             </div>
             <div class="col-md-6">
-              <label for="barbeiro-nascimento" class="form-label">Nascimento <span class="form-hint">(opcional)</span></label>
-              <input type="date" class="form-control" id="barbeiro-nascimento" name="dataNascimento">
+              <label for="barbeiro-nascimento" class="form-label">Data de nascimento</label>
+              <input type="date" class="form-control" id="barbeiro-nascimento" name="dataNascimento" required>
             </div>
             <div class="col-md-6">
               <label for="campo-ativo" class="form-label">Situação</label>
@@ -120,7 +121,7 @@
           </div>
 
           <fieldset class="mt-3">
-            <legend class="form-label">Dias de atendimento</legend>
+            <legend class="form-label">Dias de atendimento<span class="required-mark" aria-hidden="true">*</span></legend>
             <div class="days-grid">
               <div class="chip">
                 <input type="checkbox" name="diasDisponiveis" value="segunda" id="dia-segunda">
@@ -155,7 +156,7 @@
           </fieldset>
 
           <fieldset class="mt-3">
-            <legend class="form-label">Serviços que realiza</legend>
+            <legend class="form-label">Serviços que realiza<span class="required-mark" aria-hidden="true">*</span></legend>
             <div class="services-grid" id="barbeiro-servicos"></div>
             <p class="group-error" id="erro-servicos" role="alert" hidden>Selecione pelo menos um serviço.</p>
           </fieldset>

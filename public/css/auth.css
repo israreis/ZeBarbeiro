@@ -116,31 +116,6 @@
   gap: 0 1rem;
 }
 
-.password-field {
-  position: relative;
-}
-
-.password-field .form-control {
-  padding-right: 4.75rem;
-}
-
-.password-toggle {
-  position: absolute;
-  top: 50%;
-  right: 0.4rem;
-  transform: translateY(-50%);
-  padding: 0.3rem 0.6rem;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--sand);
-  font-size: 0.85rem;
-}
-
-.password-toggle:hover {
-  color: var(--brass-bright);
-}
-
 .auth-options {
   display: flex;
   align-items: center;

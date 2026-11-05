@@ -2,25 +2,43 @@
    Página inicial
    ========================================================================== */
 
-/* Cabeçalho transparente sobre a foto, que ganha fundo ao rolar (sticky + blur). */
+/* Cabeçalho sobre a foto: painel translúcido com desfoque, legível já no topo da página
+   e mais opaco ao rolar. */
 .landing-header {
   position: fixed;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, rgba(27, 19, 14, 0.85), rgba(27, 19, 14, 0));
-  border-bottom-color: transparent;
-  backdrop-filter: none;
+  background: rgba(37, 26, 19, 0.55);
+  border-bottom: 1px solid rgba(201, 160, 99, 0.28);
+  backdrop-filter: blur(12px) saturate(1.2);
   transition: background-color 300ms var(--ease-out), border-color 300ms var(--ease-out);
 }
 
 .landing-header.is-scrolled {
-  background: rgba(27, 19, 14, 0.92);
+  background: rgba(27, 19, 14, 0.94);
   border-bottom-color: var(--seam);
-  backdrop-filter: blur(10px);
 }
 
+.landing-header .brand-name,
 .landing-header .nav-link {
   color: var(--ivory);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+.landing-header .nav-link:hover,
+.landing-header .nav-link:focus-visible {
+  color: var(--brass-bright);
+}
+
+.landing-header .btn-ghost {
+  border-color: var(--brass);
+  background: rgba(27, 19, 14, 0.35);
+  color: var(--ivory);
+}
+
+.landing-header .btn-ghost:hover {
+  background: var(--brass);
+  color: var(--espresso);
 }
 
 .btn-lg-app {

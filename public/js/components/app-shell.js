@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { byId, el } from '../core/dom.js';
 import { notifyError, showPendingNotification } from '../core/notify.js';
+import { enhanceForms } from '../core/form-enhancements.js';
 import {
   HOME_BY_ROLE, clearSession, getSession, redirectToLogin, updateSessionUser,
 } from '../core/session.js';
@@ -10,7 +11,6 @@ const NAV_ITEMS = Object.freeze({
   administrador: [
     { key: 'barbeiros', label: 'Barbeiros', href: 'admin-barbeiros.html' },
     { key: 'servicos', label: 'Serviços', href: 'admin-servicos.html' },
-    { key: 'unidades', label: 'Unidades', href: 'admin-unidades.html' },
     { key: 'atendimentos', label: 'Atendimentos', href: 'admin-agenda.html' },
   ],
   barbeiro: [
@@ -159,6 +159,7 @@ export async function initAppShell(role) {
   byId('app-header').replaceWith(renderHeader(usuario, document.body.dataset.nav));
   byId('app-footer').replaceWith(fromTemplate(FOOTER_TEMPLATE));
   bindLogout();
+  enhanceForms(document);
   document.body.classList.add('is-ready');
   showPendingNotification();
   return usuario;

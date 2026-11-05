@@ -1,6 +1,6 @@
 # BarberApp — Zé Barbeiro
 
-Sistema web de agendamento para barbearias. Clientes reservam horários com o barbeiro e o serviço desejados; barbeiros gerenciam a própria agenda; o administrador mantém o cadastro de barbeiros, serviços e unidades e acompanha todos os atendimentos.
+Sistema web de agendamento para barbearias. Clientes reservam horários com o barbeiro e o serviço desejados; barbeiros gerenciam a própria agenda; o administrador mantém o cadastro de barbeiros e serviços e acompanha todos os atendimentos.
 
 O projeto não tem dependências externas: o back-end usa apenas módulos nativos do Node.js e o front-end é HTML, CSS e JavaScript (módulos ES) com Bootstrap via CDN.
 
@@ -24,7 +24,7 @@ O projeto não tem dependências externas: o back-end usa apenas módulos nativo
 | --- | --- |
 | **Cliente** | Criar conta, escolher o serviço e ver os barbeiros (com foto) que têm horários livres na data, agendar, cancelar agendamentos futuros e consultar o histórico. |
 | **Barbeiro** | Ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
-| **Administrador** | Cadastrar e editar barbeiros (foto, dias, horários e serviços), serviços e unidades; consultar a agenda e o histórico de qualquer barbeiro. |
+| **Administrador** | Cadastrar e editar barbeiros (foto, dias, horários e serviços) e serviços; consultar a agenda e o histórico de qualquer barbeiro. |
 
 Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha.
 
@@ -115,6 +115,8 @@ A interface usa a mesma atmosfera da página inicial: madeira escura, couro e la
 - Bootstrap no tema escuro (`data-bs-theme="dark"`) com as variáveis sobrescritas em `base.css`.
 - Status dos atendimentos em selos coloridos (agendado, concluído, cancelado, bloqueado).
 - Campos de valor com máscara de moeda (R$) e de telefone com máscara de celular.
+- Campos obrigatórios marcados com asterisco e campos de senha com botão de olho para mostrar/ocultar.
+- Confirmações usam um diálogo próprio (nada de `alert`/`confirm` do navegador) e as barras de rolagem ficam ocultas.
 - Animações curtas: entrada da página, abertura de modais e menus, notificações e linhas da tabela após uma busca. Tudo é desativado com `prefers-reduced-motion`.
 - Login e cadastro são páginas próprias, e não modais: têm URL própria, funcionam com o botão Voltar e com gerenciadores de senha, e recebem o usuário quando a sessão expira. O cadastro faz login automaticamente e leva direto ao agendamento.
 
@@ -149,7 +151,6 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 | GET | `/barbeiros/:id/foto` | público | Imagem da foto (usada nas telas de agendamento). |
 | GET | `/servicos` | autenticado | Todos (admin) ou somente ativos. |
 | POST / PUT | `/servicos[/:id]` | administrador | Cadastro e edição. |
-| GET / POST / PUT | `/unidades[/:id]` | administrador | Listagem, cadastro e edição. |
 | GET | `/agenda?barbeiroId=&data=` | barbeiro, administrador | Agenda completa do dia (barbeiro vê sempre a própria). |
 | GET | `/disponibilidade?servicoId=&data=&barbeiroId=` | autenticado | Horários livres e futuros por barbeiro, sem dados de outros clientes. |
 | GET | `/agendamentos?inicio=&fim=&situacao=&barbeiroId=` | autenticado | Histórico (`situacao`: `pendentes` ou `concluidos`). |
@@ -167,6 +168,7 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 - O barbeiro inclui atendimentos digitando o nome do cliente (celular opcional; não precisa ter cadastro) e escolhendo um serviço que ele oferece. O horário fica ocupado na hora, o valor vem do serviço e o status é "Agendado pelo barbeiro".
 - Barbeiros cancelam apenas bloqueios e atendimentos incluídos por eles, e só concluem atendimentos de hoje ou de datas anteriores.
 - Cancelamentos liberam o horário e permanecem no histórico.
+- Data de nascimento é obrigatória. Clientes precisam ter pelo menos 16 anos; para menores, o sistema orienta que um responsável faça o agendamento ou entre em contato com a barbearia.
 - O "agora" considera o fuso `America/Sao_Paulo` (configurável).
 
 ## Segurança
