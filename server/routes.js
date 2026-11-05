@@ -12,7 +12,7 @@ const ANY_ROLE = [ADMIN, BARBEIRO, CLIENTE];
  */
 export function buildRouter({ sessions, store, services }) {
   const {
-    auth, barbeiros, servicos, unidades, agendamentos,
+    auth, barbeiros, servicos, agendamentos,
   } = services;
 
   /** Middleware de autenticação/autorização baseado em perfil. */
@@ -77,9 +77,6 @@ export function buildRouter({ sessions, store, services }) {
     .post('/api/servicos', adminOnly, async (ctx) => created(ctx, await servicos.create(ctx.body)))
     .put('/api/servicos/:id', adminOnly, (ctx) => servicos.update(ctx.params.id, ctx.body))
 
-    .get('/api/unidades', adminOnly, () => unidades.list())
-    .post('/api/unidades', adminOnly, async (ctx) => created(ctx, await unidades.create(ctx.body)))
-    .put('/api/unidades/:id', adminOnly, (ctx) => unidades.update(ctx.params.id, ctx.body))
 
     // Agenda e atendimentos
     .get('/api/agenda', requireRole(ADMIN, BARBEIRO), (ctx) => agendamentos.getAgenda(ctx.user, ctx.query))

@@ -1,5 +1,5 @@
 import { unprocessable } from './http/errors.js';
-import { isValidIsoDate, isValidTime } from './domain/time.js';
+import { ageOn, isValidIsoDate, isValidTime } from './domain/time.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const PASSWORD_MIN_LENGTH = 8;
@@ -46,9 +46,19 @@ export function isoDate(value, field = 'data') {
   return value;
 }
 
-export function optionalIsoDate(value, field) {
-  if (value === undefined || value === null || value === '') return '';
-  return isoDate(value, field);
+/**
+ * Data de nascimento obrigatória e plausível (não futura, até 120 anos).
+ * Com `minAge`, rejeita quem ainda não tem a idade mínima usando `minAgeMessage`.
+ */
+export function birthDate(value, today, { minAge, minAgeMessage } = {}) {
+  if (!value) throw unprocessable('Informe a data de nascimento.');
+  const date = isoDate(value, 'data de nascimento');
+  const age = ageOn(date, today);
+  if (date > today || age > 120) throw unprocessable('Informe uma data de nascimento válida.');
+  if (minAge !== undefined && age < minAge) {
+    throw unprocessable(minAgeMessage ?? `É preciso ter pelo menos ${minAge} anos.`);
+  }
+  return date;
 }
 
 export function time(value, field = 'horário') {

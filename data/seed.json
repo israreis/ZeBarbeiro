@@ -5,7 +5,7 @@
       "nome": "Barbeiro Administrador",
       "email": "adm@adm.com.br",
       "telefone": "(31)97144-8207",
-      "dataNascimento": "",
+      "dataNascimento": "1980-01-15",
       "perfil": "administrador",
       "senhaHash": "scrypt$16384$8$1$VuT4IFUNZlc1U4s2fqnVNA==$eA0Oy++K9coCAvQXAz6Oxgq4CAWQjUmPCwqMSf+PPwDn4jhoEwX6UeTHrFTM5vPqkQixZw0NdpmhkUEQ6LmZZw=="
     },
@@ -217,36 +217,6 @@
       "valor": 40.99,
       "duracaoMinutos": 30,
       "ativo": true
-    }
-  ],
-  "unidades": [
-    {
-      "id": "1",
-      "nome": "Unidade 01",
-      "endereco": "Rua Carijos, 244, BH/ MG",
-      "telefone": "(31)97144-8206",
-      "email": "unidade01@gmail.com"
-    },
-    {
-      "id": "2",
-      "nome": "Unidade 02",
-      "endereco": "Rua Carijos, 244, BH/ MG",
-      "telefone": "(31)97144-8207",
-      "email": "unidade01@gmail.com"
-    },
-    {
-      "id": "dcdd",
-      "nome": "Unidade 03",
-      "endereco": "Rua carijos 244",
-      "telefone": "(31)97144-8209",
-      "email": "unidade03@unidades.com.br"
-    },
-    {
-      "id": "2e79",
-      "nome": "unidade 04",
-      "endereco": "Rua carijos 244",
-      "telefone": "(31)97144-8209",
-      "email": "unidade04@unidades.com.br"
     }
   ],
   "agendamentos": [

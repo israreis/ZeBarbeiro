@@ -57,7 +57,6 @@ async function buildFixture() {
       { id: 's1', nome: 'Corte', valor: 50, duracaoMinutos: 30, ativo: true },
       { id: 's2', nome: 'Barba', valor: 40, duracaoMinutos: 30, ativo: false },
     ],
-    unidades: [],
     agendamentos: [
       {
         id: 'a-c2', barbeiroId: 'b1', clienteId: 'c2', servicoId: 's1', data: '2026-11-06',
@@ -132,7 +131,9 @@ describe('autenticação', () => {
   });
 
   test('cadastro de cliente valida dados e impede e-mail duplicado', async () => {
-    const dados = { nome: 'Novo', email: 'novo@teste.com', senha: 'abcdefgh', telefone: '31988887777' };
+    const dados = {
+      nome: 'Novo', email: 'novo@teste.com', senha: 'abcdefgh', telefone: '31988887777', dataNascimento: '2000-05-10',
+    };
     const criado = await api('POST', '/api/clientes', { body: dados });
     assert.equal(criado.status, 201);
     assert.equal(criado.body.perfil, 'cliente');
@@ -142,9 +143,35 @@ describe('autenticação', () => {
     assert.equal((await api('POST', '/api/clientes', { body: { ...dados, email: 'x@teste.com', senha: '123' } })).status, 422);
   });
 
+  test('cadastro exige data de nascimento e bloqueia menores de 16 anos', async () => {
+    const base = { nome: 'Jovem', email: 'jovem@teste.com', senha: 'abcdefgh', telefone: '31988887777' };
+    const semData = await api('POST', '/api/clientes', { body: base });
+    assert.equal(semData.status, 422);
+
+    // HOJE = 2026-11-05: quem nasceu em 2010-11-06 ainda tem 15 anos.
+    const menor = await api('POST', '/api/clientes', { body: { ...base, dataNascimento: '2010-11-06' } });
+    assert.equal(menor.status, 422);
+    assert.match(menor.body.erro, /responsável/);
+
+    const dezesseis = await api('POST', '/api/clientes', { body: { ...base, dataNascimento: '2010-11-05' } });
+    assert.equal(dezesseis.status, 201);
+
+    const futura = await api('POST', '/api/clientes', {
+      body: { ...base, email: 'outro@teste.com', dataNascimento: '2030-01-01' },
+    });
+    assert.equal(futura.status, 422);
+  });
+
   test('cadastro público não permite escolher o perfil', async () => {
     const res = await api('POST', '/api/clientes', {
-      body: { nome: 'X', email: 'x@teste.com', senha: 'abcdefgh', telefone: '31988887777', perfil: 'administrador' },
+      body: {
+        nome: 'X',
+        email: 'x@teste.com',
+        senha: 'abcdefgh',
+        telefone: '31988887777',
+        dataNascimento: '2000-05-10',
+        perfil: 'administrador',
+      },
     });
     assert.equal(res.body.perfil, 'cliente');
   });
@@ -187,7 +214,6 @@ describe('autenticação', () => {
 describe('autorização por perfil', () => {
   test('cliente não acessa cadastros administrativos', async () => {
     const token = await login('c1@teste.com');
-    assert.equal((await api('GET', '/api/unidades', { token })).status, 403);
     assert.equal((await api('GET', '/api/barbeiros/b1', { token })).status, 403);
     assert.equal((await api('POST', '/api/servicos', { token, body: {} })).status, 403);
   });
@@ -204,7 +230,7 @@ describe('autorização por perfil', () => {
   test('administrador cadastra barbeiro de forma atômica e não recebe a senha', async () => {
     const token = await login('adm@teste.com');
     const novo = {
-      nome: 'Barbeiro Novo', email: 'bn@teste.com', senha: 'abcdefgh', telefone: '31977776666',
+      nome: 'Barbeiro Novo', email: 'bn@teste.com', senha: 'abcdefgh', telefone: '31977776666', dataNascimento: '1995-02-03',
       servicoIds: ['s1'], diasDisponiveis: ['segunda'], horarioInicial: '09:00', horarioFinal: '18:00',
     };
     const res = await api('POST', '/api/barbeiros', { token, body: novo });

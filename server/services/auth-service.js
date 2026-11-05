@@ -3,8 +3,16 @@ import { conflict, tooManyRequests, unauthorized, unprocessable } from '../http/
 import { dummyVerify, hashPassword, verifyPassword } from '../auth/password.js';
 import { ROLES, toPublicUser } from '../domain/roles.js';
 import * as v from '../validation.js';
+import { IDADE_MINIMA_CLIENTE, MENSAGEM_MENOR_DE_IDADE } from '../domain/clientes.js';
 
-export function createAuthService({ store, sessions, loginLimiter }) {
+export function createAuthService({
+  store, sessions, loginLimiter, clock,
+}) {
+  /** Nascimento obrigatório; clientes precisam ter a idade mínima. */
+  const parseNascimento = (value, perfil) => v.birthDate(value, clock().date, perfil === ROLES.CLIENTE
+    ? { minAge: IDADE_MINIMA_CLIENTE, minAgeMessage: MENSAGEM_MENOR_DE_IDADE }
+    : {});
+
   const findByEmail = (email) => store.snapshot.usuarios.find((u) => u.email === email);
 
   return {
@@ -37,7 +45,7 @@ export function createAuthService({ store, sessions, loginLimiter }) {
         nome: v.requiredString(body?.nome, 'nome'),
         email: v.email(body?.email),
         telefone: v.phone(body?.telefone),
-        dataNascimento: v.optionalIsoDate(body?.dataNascimento, 'data de nascimento'),
+        dataNascimento: parseNascimento(body?.dataNascimento, ROLES.CLIENTE),
       };
       const senha = v.password(body?.senha);
       const senhaHash = await hashPassword(senha);
@@ -62,7 +70,7 @@ export function createAuthService({ store, sessions, loginLimiter }) {
         nome: v.requiredString(body?.nome, 'nome'),
         email: v.email(body?.email),
         telefone: v.phone(body?.telefone),
-        dataNascimento: v.optionalIsoDate(body?.dataNascimento, 'data de nascimento'),
+        dataNascimento: parseNascimento(body?.dataNascimento, usuario.perfil),
       };
 
       const emailAlterado = dados.email !== usuario.email;

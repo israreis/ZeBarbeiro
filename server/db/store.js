@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-const COLLECTIONS = ['usuarios', 'barbeiros', 'servicos', 'unidades', 'agendamentos'];
+const COLLECTIONS = ['usuarios', 'barbeiros', 'servicos', 'agendamentos'];
 
 /**
  * Persistência em arquivo JSON.

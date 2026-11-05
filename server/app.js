@@ -10,7 +10,6 @@ import { nowInTimeZone } from './domain/time.js';
 import { createAuthService } from './services/auth-service.js';
 import { createBarbeirosService } from './services/barbeiros-service.js';
 import { createServicosService } from './services/servicos-service.js';
-import { createUnidadesService } from './services/unidades-service.js';
 import { createAgendamentosService } from './services/agendamentos-service.js';
 
 /**
@@ -26,10 +25,13 @@ export function createApp({ store, config, clock, logger = console }) {
   const now = clock ?? (() => nowInTimeZone(config.timeZone));
 
   const services = {
-    auth: createAuthService({ store, sessions, loginLimiter }),
-    barbeiros: createBarbeirosService({ store, sessions, uploadsDir: config.uploadsDir }),
+    auth: createAuthService({
+      store, sessions, loginLimiter, clock: now,
+    }),
+    barbeiros: createBarbeirosService({
+      store, sessions, uploadsDir: config.uploadsDir, clock: now,
+    }),
     servicos: createServicosService({ store }),
-    unidades: createUnidadesService({ store }),
     agendamentos: createAgendamentosService({ store, clock: now }),
   };
   const router = buildRouter({ sessions, store, services });

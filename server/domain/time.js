@@ -61,3 +61,10 @@ export function nowInTimeZone(timeZone, now = new Date()) {
 export function isPast(date, time, now) {
   return date < now.date || (date === now.date && time <= now.time);
 }
+
+/** Idade completa (em anos) de quem nasceu em `birthIso`, na data `todayIso`. */
+export function ageOn(birthIso, todayIso) {
+  const [by, bm, bd] = birthIso.split('-').map(Number);
+  const [ty, tm, td] = todayIso.split('-').map(Number);
+  return ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0);
+}

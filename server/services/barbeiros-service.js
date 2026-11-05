@@ -8,12 +8,12 @@ import * as v from '../validation.js';
 import { createPhotoStorage } from './photo-storage.js';
 import { fotoUrl } from '../domain/barbeiro.js';
 
-function parseDadosPessoais(body) {
+function parseDadosPessoais(body, today) {
   return {
     nome: v.requiredString(body?.nome, 'nome'),
     email: v.email(body?.email),
     telefone: v.phone(body?.telefone),
-    dataNascimento: v.optionalIsoDate(body?.dataNascimento, 'data de nascimento'),
+    dataNascimento: v.birthDate(body?.dataNascimento, today),
   };
 }
 
@@ -42,7 +42,9 @@ function assertEmailDisponivel(db, email, ignoreId) {
   }
 }
 
-export function createBarbeirosService({ store, sessions, uploadsDir }) {
+export function createBarbeirosService({
+  store, sessions, uploadsDir, clock,
+}) {
   const photos = createPhotoStorage(uploadsDir);
 
   const toAdminView = (barbeiro, db) => {
@@ -85,7 +87,7 @@ export function createBarbeirosService({ store, sessions, uploadsDir }) {
     },
 
     async create(body) {
-      const pessoais = parseDadosPessoais(body);
+      const pessoais = parseDadosPessoais(body, clock().date);
       const agenda = parseAgenda(body, store.snapshot.servicos);
       const senhaHash = await hashPassword(v.password(body?.senha));
 
@@ -99,7 +101,7 @@ export function createBarbeirosService({ store, sessions, uploadsDir }) {
     },
 
     async update(id, body) {
-      const pessoais = parseDadosPessoais(body);
+      const pessoais = parseDadosPessoais(body, clock().date);
       const agenda = parseAgenda(body, store.snapshot.servicos);
       const novaSenha = body?.novaSenha ? v.password(body.novaSenha, 'nova senha') : null;
       const senhaHash = novaSenha ? await hashPassword(novaSenha) : null;
