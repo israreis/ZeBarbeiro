@@ -1,9 +1,8 @@
 import { api } from '../core/api.js';
-import { byId, el, modal, withBusy } from '../core/dom.js';
-import { isFormValid, rawValue, setMatchValidity } from '../core/forms.js';
-import { notifyError, notifySuccess } from '../core/notify.js';
+import { byId, el } from '../core/dom.js';
+import { notifyError } from '../core/notify.js';
 import {
-  HOME_BY_ROLE, clearSession, getSession, redirectToLogin,
+  HOME_BY_ROLE, clearSession, getSession, redirectToLogin, updateSessionUser,
 } from '../core/session.js';
 
 /** Itens de menu por perfil. `key` é comparado com o atributo data-nav da página. */
@@ -24,7 +23,7 @@ const NAV_ITEMS = Object.freeze({
   ],
 });
 
-const ROLE_LABELS = Object.freeze({ administrador: 'Administrador', barbeiro: 'Barbeiro', cliente: 'Cliente' });
+export const ROLE_LABELS = Object.freeze({ administrador: 'Administrador', barbeiro: 'Barbeiro', cliente: 'Cliente' });
 
 /* Marcação estática (sem dados do usuário), por isso pode ser montada via template. */
 const HEADER_TEMPLATE = `
@@ -49,8 +48,7 @@ const HEADER_TEMPLATE = `
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
               <li><h2 class="dropdown-header" data-user-role></h2></li>
-              <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#minhaContaModal">Minha conta</button></li>
-              <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">Alterar senha</button></li>
+              <li><a class="dropdown-item" href="minha-conta.html">Minha conta</a></li>
               <li><hr class="dropdown-divider"></li>
               <li><button type="button" class="dropdown-item" data-logout>Sair</button></li>
             </ul>
@@ -59,55 +57,6 @@ const HEADER_TEMPLATE = `
       </div>
     </nav>
   </header>`;
-
-const ACCOUNT_MODALS_TEMPLATE = `
-  <div class="modal fade" id="minhaContaModal" tabindex="-1" aria-labelledby="minhaContaTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title" id="minhaContaTitulo">Minha conta</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body">
-          <dl class="account-details">
-            <dt>Nome</dt><dd data-conta="nome"></dd>
-            <dt>E-mail</dt><dd data-conta="email"></dd>
-            <dt>Telefone</dt><dd data-conta="telefone"></dd>
-          </dl>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Fechar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="alterarSenhaModal" tabindex="-1" aria-labelledby="alterarSenhaTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" id="formAlterarSenha" novalidate>
-        <div class="modal-header">
-          <h2 class="modal-title" id="alterarSenhaTitulo">Alterar senha</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body">
-          <label for="senhaAtual" class="form-label">Senha atual</label>
-          <input type="password" class="form-control mb-3" id="senhaAtual" name="senhaAtual"
-            autocomplete="current-password" required>
-          <label for="novaSenha" class="form-label">Nova senha</label>
-          <input type="password" class="form-control" id="novaSenha" name="novaSenha"
-            autocomplete="new-password" minlength="8" required aria-describedby="novaSenhaDica">
-          <p class="form-hint mt-1 mb-3" id="novaSenhaDica">Mínimo de 8 caracteres.</p>
-          <label for="confirmarNovaSenha" class="form-label">Confirmar nova senha</label>
-          <input type="password" class="form-control" id="confirmarNovaSenha" name="confirmarNovaSenha"
-            autocomplete="new-password" required>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-app">Alterar senha</button>
-        </div>
-      </form>
-    </div>
-  </div>`;
 
 export const FOOTER_TEMPLATE = `
   <footer class="app-footer">
@@ -142,14 +91,23 @@ export function fromTemplate(html) {
   return template.content;
 }
 
+function fillUser(root, usuario) {
+  const firstName = usuario.nome.trim().split(/\s+/)[0];
+  root.querySelector('[data-user-first-name]').textContent = firstName;
+  root.querySelector('[data-user-initial]').textContent = firstName.charAt(0).toUpperCase();
+  root.querySelector('[data-user-role]').textContent = ROLE_LABELS[usuario.perfil];
+}
+
+/** Reflete no cabeçalho e na sessão local os dados atualizados do usuário. */
+export function refreshCurrentUser(usuario) {
+  updateSessionUser(usuario);
+  fillUser(document, usuario);
+}
+
 function renderHeader(usuario, activeKey) {
   const fragment = fromTemplate(HEADER_TEMPLATE);
   fragment.querySelector('[data-home-link]').href = HOME_BY_ROLE[usuario.perfil];
-
-  const firstName = usuario.nome.trim().split(/\s+/)[0];
-  fragment.querySelector('[data-user-first-name]').textContent = firstName;
-  fragment.querySelector('[data-user-initial]').textContent = firstName.charAt(0).toUpperCase();
-  fragment.querySelector('[data-user-role]').textContent = ROLE_LABELS[usuario.perfil];
+  fillUser(fragment, usuario);
 
   const links = NAV_ITEMS[usuario.perfil].map((item) => el('a', {
     className: `nav-link${item.key === activeKey ? ' active' : ''}`,
@@ -161,43 +119,7 @@ function renderHeader(usuario, activeKey) {
   return fragment;
 }
 
-function bindAccountModals(usuario) {
-  const fill = (dados) => {
-    for (const field of ['nome', 'email', 'telefone']) {
-      document.querySelector(`[data-conta="${field}"]`).textContent = dados[field] || '—';
-    }
-  };
-  fill(usuario);
-  byId('minhaContaModal').addEventListener('show.bs.modal', async () => {
-    try {
-      fill(await api.get('/auth/me'));
-    } catch (error) {
-      notifyError(error);
-    }
-  });
-
-  const form = byId('formAlterarSenha');
-  const submit = form.querySelector('[type="submit"]');
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    setMatchValidity(form, 'novaSenha', 'confirmarNovaSenha', 'A confirmação deve ser igual à nova senha.');
-    if (!isFormValid(form)) return;
-
-    withBusy(submit, async () => {
-      try {
-        await api.put('/auth/senha', {
-          senhaAtual: rawValue(form, 'senhaAtual'),
-          novaSenha: rawValue(form, 'novaSenha'),
-        });
-        form.reset();
-        modal.hide(byId('alterarSenhaModal'));
-        notifySuccess('Senha alterada.');
-      } catch (error) {
-        notifyError(error);
-      }
-    });
-  });
-
+function bindLogout() {
   document.querySelector('[data-logout]').addEventListener('click', async () => {
     try {
       await api.post('/auth/logout');
@@ -210,9 +132,9 @@ function bindAccountModals(usuario) {
 }
 
 /**
- * Protege a página para o perfil informado e monta cabeçalho, rodapé e modais da conta.
+ * Protege a página para o perfil informado e monta cabeçalho e rodapé.
  * Usuários de outro perfil são levados à própria página inicial.
- * @param {'administrador'|'barbeiro'|'cliente'} role
+ * @param {'administrador'|'barbeiro'|'cliente'|null} role perfil exigido (null = qualquer perfil)
  * @returns {Promise<object|null>} usuário logado, ou null se houve redirecionamento
  */
 export async function initAppShell(role) {
@@ -221,7 +143,7 @@ export async function initAppShell(role) {
     redirectToLogin();
     return null;
   }
-  if (session.usuario.perfil !== role) {
+  if (role && session.usuario.perfil !== role) {
     window.location.replace(HOME_BY_ROLE[session.usuario.perfil] ?? 'index.html');
     return null;
   }
@@ -236,8 +158,7 @@ export async function initAppShell(role) {
 
   byId('app-header').replaceWith(renderHeader(usuario, document.body.dataset.nav));
   byId('app-footer').replaceWith(fromTemplate(FOOTER_TEMPLATE));
-  document.body.append(fromTemplate(ACCOUNT_MODALS_TEMPLATE));
-  bindAccountModals(usuario);
+  bindLogout();
   document.body.classList.add('is-ready');
   return usuario;
 }

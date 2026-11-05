@@ -24,18 +24,29 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Minha agenda</h1>
-          <p class="page-lead">Marque os horários na tabela e escolha a ação.</p>
+          <p class="page-lead">Veja seus horários do dia, inclua atendimentos e gerencie bloqueios.</p>
         </div>
+        <button type="button" class="btn-app" id="btn-novo-atendimento">Incluir atendimento</button>
       </div>
-      <section class="panel panel-filters" aria-label="Filtros">
+
+      <section class="panel panel-filters" aria-label="Data da agenda">
         <form id="form-agenda" class="filter-form" novalidate>
           <label class="field">Data
             <input class="form-control" type="date" name="data" required>
           </label>
-          <button type="submit" class="btn-app">Ver agenda</button>
+          <button type="submit" class="btn-ghost">Ver agenda</button>
         </form>
       </section>
-      <section class="panel" aria-label="Resultados">
+
+      <section class="panel" aria-label="Horários do dia">
+        <div class="table-toolbar">
+          <span class="selection-count" data-selection-count aria-live="polite">Nenhum horário selecionado</span>
+          <div class="action-buttons" role="group" aria-label="Ações para os horários selecionados">
+            <button type="button" class="btn-ghost btn-sm-app" id="btn-bloquear" disabled>Bloquear</button>
+            <button type="button" class="btn-ghost btn-sm-app" id="btn-cancelar" disabled>Desfazer bloqueio/atendimento</button>
+            <button type="button" class="btn-ghost btn-sm-app" id="btn-concluir" disabled>Concluir atendimento</button>
+          </div>
+        </div>
         <div class="table-wrapper">
           <table class="table table-hover table-app">
             <thead>
@@ -51,18 +62,63 @@
             <tbody id="tabela-agenda"></tbody>
           </table>
         </div>
-        <div class="action-bar">
-          <span class="selection-count" data-selection-count aria-live="polite">Nenhum horário selecionado</span>
-          <div class="action-buttons">
-            <button type="button" class="btn-ghost" id="btn-incluir">Incluir atendimento</button>
-            <button type="button" class="btn-ghost" id="btn-bloquear">Bloquear</button>
-            <button type="button" class="btn-ghost" id="btn-cancelar">Desfazer bloqueio/atendimento</button>
-            <button type="button" class="btn-app" id="btn-concluir">Concluir atendimento</button>
-          </div>
-        </div>
       </section>
     </div>
   </main>
+
+  <div class="modal fade" id="modal-atendimento" tabindex="-1" aria-labelledby="modal-atendimento-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" id="form-atendimento" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-atendimento-titulo">Incluir atendimento</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-6">
+              <label for="atendimento-data" class="form-label">Data</label>
+              <input type="date" class="form-control" id="atendimento-data" name="data" required>
+            </div>
+            <div class="col-6">
+              <label for="atendimento-horario" class="form-label">Horário</label>
+              <select class="form-select" id="atendimento-horario" name="horario" required></select>
+            </div>
+            <div class="col-12">
+              <label for="atendimento-cliente" class="form-label">Cliente</label>
+              <select class="form-select" id="atendimento-cliente" name="clienteId" required></select>
+            </div>
+            <div class="col-md-7 reveal" data-cliente-avulso hidden>
+              <label for="atendimento-cliente-nome" class="form-label">Nome do cliente</label>
+              <input type="text" class="form-control" id="atendimento-cliente-nome" name="clienteNome" maxlength="120">
+            </div>
+            <div class="col-md-5 reveal" data-cliente-avulso hidden>
+              <label for="atendimento-cliente-telefone" class="form-label">Celular <span class="form-hint">(opcional)</span></label>
+              <input type="tel" class="form-control" id="atendimento-cliente-telefone" name="clienteTelefone"
+                placeholder="(31)99999-9999">
+            </div>
+            <div class="col-12">
+              <label for="atendimento-servico" class="form-label">Serviço</label>
+              <select class="form-select" id="atendimento-servico" name="servicoId" required></select>
+            </div>
+          </div>
+          <dl class="booking-summary">
+            <div>
+              <dt>Valor</dt>
+              <dd data-resumo-valor>—</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd data-resumo-status></dd>
+            </div>
+          </dl>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-app">Incluir atendimento</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="app-footer"></div>
 </body>

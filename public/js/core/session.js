@@ -40,6 +40,20 @@ export function getSession() {
   return null;
 }
 
+/** Atualiza os dados do usuário guardados na sessão (ex.: após editar o perfil). */
+export function updateSessionUser(usuario) {
+  for (const kind of ['session', 'local']) {
+    const storage = safeStorage(kind);
+    const raw = storage?.getItem(SESSION_KEY);
+    if (!raw) continue;
+    try {
+      storage.setItem(SESSION_KEY, JSON.stringify({ ...JSON.parse(raw), usuario }));
+    } catch {
+      /* sessão corrompida: ignora */
+    }
+  }
+}
+
 export function clearSession() {
   safeStorage('session')?.removeItem(SESSION_KEY);
   safeStorage('local')?.removeItem(SESSION_KEY);

@@ -444,3 +444,85 @@ body.is-ready main {
     padding: 0.75rem;
   }
 }
+
+/* ---------- Formulários em painel (Minha conta) ---------- */
+
+.panel-form {
+  padding: 1.75rem;
+}
+
+.panel-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.4rem;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+}
+
+/* Campo que aparece sob demanda */
+.reveal:not([hidden]) {
+  animation: pop-in 220ms var(--ease-out);
+}
+
+@media (max-width: 576px) {
+  .panel-form {
+    padding: 1.25rem;
+  }
+
+  .panel-actions > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* ---------- Barra de ações sobre a tabela ---------- */
+
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--seam);
+}
+
+.btn-sm-app {
+  padding: 0.4rem 0.95rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- Resumo do atendimento (modal do barbeiro) ---------- */
+
+.booking-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--seam);
+  border-radius: var(--radius-md);
+  background: var(--espresso);
+}
+
+.booking-summary dt {
+  color: var(--sand);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.booking-summary dd {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+@media (max-width: 576px) {
+  .table-toolbar {
+    padding: 0.9rem 1rem;
+  }
+}

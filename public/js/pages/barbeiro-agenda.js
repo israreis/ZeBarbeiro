@@ -1,27 +1,168 @@
 import { api } from '../core/api.js';
 import { initAppShell } from '../components/app-shell.js';
 import {
-  byId, el, renderLoading, renderRows, withBusy,
+  byId, el, modal, renderLoading, renderRows, setOptions, withBusy,
 } from '../core/dom.js';
-import { isFormValid, value } from '../core/forms.js';
-import { STATUS, formatCurrency, todayIso } from '../core/format.js';
+import { applyPhoneMask, isFormValid, value } from '../core/forms.js';
+import { STATUS, formatCurrency, formatDate, todayIso } from '../core/format.js';
 import { notify, notifyError, notifySuccess } from '../core/notify.js';
 import { statusBadge } from '../components/status-badge.js';
 import { bindSlotSelection } from '../components/slot-selection.js';
 
-const CONCLUIVEIS = [STATUS.AGENDADO, STATUS.AGENDADO_BARBEIRO];
-const CANCELAVEIS = [STATUS.BLOQUEADO, STATUS.AGENDADO_BARBEIRO];
+const CLIENTE_SEM_CADASTRO = '__sem-cadastro__';
+const STATUS_INCLUSAO = STATUS.AGENDADO_BARBEIRO;
 
-/** Um horário pode ser selecionado se houver alguma ação possível sobre ele. */
-function isSelectable(slot) {
-  const status = slot.agendamento?.status;
-  if (!status) return !slot.passado;
-  return CONCLUIVEIS.includes(status) || CANCELAVEIS.includes(status);
+/**
+ * Ações sobre os horários marcados na tabela. Cada uma informa quais horários aceita;
+ * o botão só fica habilitado quando há pelo menos um horário compatível selecionado.
+ */
+const SELECTION_ACTIONS = {
+  bloquear: {
+    accepts: (slot) => !slot.agendamento && !slot.passado,
+    success: (n) => (n === 1 ? 'Horário bloqueado.' : `${n} horários bloqueados.`),
+    skipped: 'Só horários livres e futuros podem ser bloqueados.',
+  },
+  cancelar: {
+    accepts: (slot) => [STATUS.BLOQUEADO, STATUS.AGENDADO_BARBEIRO].includes(slot.agendamento?.status),
+    success: () => 'Bloqueio ou atendimento desfeito.',
+    skipped: 'Só é possível desfazer bloqueios e atendimentos incluídos por você.',
+  },
+  concluir: {
+    accepts: (slot) => [STATUS.AGENDADO, STATUS.AGENDADO_BARBEIRO].includes(slot.agendamento?.status),
+    success: (n) => (n === 1 ? 'Atendimento concluído.' : `${n} atendimentos concluídos.`),
+    skipped: 'Só atendimentos agendados podem ser concluídos.',
+  },
+};
+
+const isSelectable = (slot) => Object.values(SELECTION_ACTIONS).some((action) => action.accepts(slot));
+
+/** Modal de inclusão manual de atendimento (cliente no balcão, telefone etc.). */
+function createNovoAtendimento({ usuario, onCreated }) {
+  const modalElement = byId('modal-atendimento');
+  const form = byId('form-atendimento');
+  const submit = form.querySelector('[type="submit"]');
+  const avulsoFields = form.querySelectorAll('[data-cliente-avulso]');
+  let servicos = [];
+
+  applyPhoneMask(form.elements.clienteTelefone);
+  form.elements.data.min = todayIso();
+  form.querySelector('[data-resumo-status]').textContent = 'Agendado pelo barbeiro';
+
+  async function loadOptions() {
+    const [barbeiros, clientes] = await Promise.all([api.get('/barbeiros'), api.get('/clientes')]);
+    servicos = barbeiros.find((b) => b.id === usuario.id)?.servicos ?? [];
+    setOptions(form.elements.servicoId, servicos, {
+      placeholder: servicos.length ? 'Escolha o serviço' : 'Nenhum serviço ativo vinculado a você',
+    });
+
+    const clienteSelect = form.elements.clienteId;
+    clienteSelect.replaceChildren(
+      el('option', { value: '', text: 'Escolha o cliente', disabled: true, selected: true }),
+      el('option', { value: CLIENTE_SEM_CADASTRO, text: 'Cliente sem cadastro' }),
+      el('optgroup', { label: 'Clientes cadastrados' }, clientes.map((c) => el('option', {
+        value: c.id, text: c.telefone ? `${c.nome} (${c.telefone})` : c.nome,
+      }))),
+    );
+  }
+
+  /** Lista apenas os horários livres e futuros da data escolhida. */
+  async function loadHorarios() {
+    const select = form.elements.horario;
+    const data = form.elements.data.value;
+    if (!data) {
+      setOptions(select, [], { placeholder: 'Escolha a data' });
+      return;
+    }
+    setOptions(select, [], { placeholder: 'Carregando...' });
+    try {
+      const agenda = await api.get('/agenda', { data });
+      const livres = agenda.horarios.filter((h) => !h.agendamento && !h.passado);
+      let placeholder = 'Escolha o horário';
+      if (!agenda.atende) placeholder = 'Você não atende nesta data';
+      else if (!livres.length) placeholder = 'Nenhum horário livre nesta data';
+      setOptions(select, livres, { placeholder, value: (h) => h.horario, label: (h) => h.horario });
+    } catch (error) {
+      setOptions(select, [], { placeholder: 'Não foi possível carregar os horários' });
+      notifyError(error);
+    }
+  }
+
+  function syncClienteAvulso() {
+    const avulso = form.elements.clienteId.value === CLIENTE_SEM_CADASTRO;
+    avulsoFields.forEach((field) => { field.hidden = !avulso; });
+    form.elements.clienteNome.required = avulso;
+  }
+
+  function syncResumo() {
+    const servico = servicos.find((s) => s.id === form.elements.servicoId.value);
+    form.querySelector('[data-resumo-valor]').textContent = servico ? formatCurrency(servico.valor) : '—';
+  }
+
+  form.elements.data.addEventListener('change', loadHorarios);
+  form.elements.clienteId.addEventListener('change', syncClienteAvulso);
+  form.elements.servicoId.addEventListener('change', syncResumo);
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!isFormValid(form)) return;
+
+    const clienteId = form.elements.clienteId.value;
+    const payload = {
+      tipo: STATUS_INCLUSAO,
+      data: form.elements.data.value,
+      horarios: [form.elements.horario.value],
+      servicoId: form.elements.servicoId.value,
+      ...(clienteId === CLIENTE_SEM_CADASTRO
+        ? { clienteNome: value(form, 'clienteNome'), clienteTelefone: value(form, 'clienteTelefone') || undefined }
+        : { clienteId }),
+    };
+
+    withBusy(submit, async () => {
+      try {
+        await api.post('/agendamentos', payload);
+        modal.hide(modalElement);
+        notifySuccess(`Atendimento incluído em ${formatDate(payload.data)} às ${payload.horarios[0]}.`);
+        await onCreated(payload.data);
+      } catch (error) {
+        notifyError(error);
+        await loadHorarios(); // o horário pode ter sido ocupado por outra pessoa
+      }
+    });
+  });
+
+  let optionsLoaded = false;
+  return {
+    async open(data) {
+      form.reset();
+      syncClienteAvulso();
+      syncResumo();
+      form.elements.data.value = data && data >= todayIso() ? data : todayIso();
+      modal.show(modalElement);
+      try {
+        if (!optionsLoaded) {
+          await loadOptions();
+          optionsLoaded = true;
+        } else {
+          form.elements.clienteId.selectedIndex = 0;
+          form.elements.servicoId.selectedIndex = 0;
+        }
+      } catch (error) {
+        notifyError(error);
+      }
+      await loadHorarios();
+    },
+  };
 }
 
-if (await initAppShell('barbeiro')) {
+const usuario = await initAppShell('barbeiro');
+if (usuario) {
   const form = byId('form-agenda');
   const tbody = byId('tabela-agenda');
+  const actionButtons = {
+    bloquear: byId('btn-bloquear'),
+    cancelar: byId('btn-cancelar'),
+    concluir: byId('btn-concluir'),
+  };
   let agenda = null;
 
   const columns = [
@@ -41,9 +182,23 @@ if (await initAppShell('barbeiro')) {
     { className: 'hide-sm', render: (h) => formatCurrency(h.agendamento?.servico?.valor) },
     { render: (h) => statusBadge(h.agendamento?.status ?? (h.passado ? 'Encerrado' : 'Livre')) },
   ];
-  const selection = bindSlotSelection(tbody, document.querySelector('[data-selection-count]'));
 
-  form.elements.data.value = todayIso();
+  function selectedSlots() {
+    if (!agenda) return [];
+    const horarios = new Set([...tbody.querySelectorAll('.slot-checkbox:checked')].map((input) => input.value));
+    return agenda.horarios.filter((h) => horarios.has(h.horario));
+  }
+
+  function updateActionButtons() {
+    const selecionados = selectedSlots();
+    for (const [name, button] of Object.entries(actionButtons)) {
+      button.disabled = !selecionados.some(SELECTION_ACTIONS[name].accepts);
+    }
+  }
+
+  const selection = bindSlotSelection(tbody, document.querySelector('[data-selection-count]'));
+  tbody.addEventListener('change', updateActionButtons);
+  tbody.addEventListener('click', updateActionButtons);
 
   async function load() {
     if (!isFormValid(form)) return;
@@ -59,82 +214,65 @@ if (await initAppShell('barbeiro')) {
       notifyError(error);
     }
     selection.refresh();
+    updateActionButtons();
   }
 
-  function selectedSlots() {
-    if (!agenda) return [];
-    const horarios = new Set([...tbody.querySelectorAll('.slot-checkbox:checked')].map((input) => input.value));
-    return agenda.horarios.filter((h) => horarios.has(h.horario));
-  }
-
-  /**
-   * Executa uma ação sobre os horários selecionados, informando quais foram ignorados
-   * por não se aplicarem à ação, e recarrega a agenda ao final.
-   */
-  async function runAction({ accepts, execute, success, invalidMessage }) {
+  /** Executa uma ação sobre os horários compatíveis e informa os que foram ignorados. */
+  async function runAction(name, execute) {
+    const action = SELECTION_ACTIONS[name];
     const selecionados = selectedSlots();
-    if (!selecionados.length) {
-      notify('Marque pelo menos um horário na tabela.', 'error');
-      return;
-    }
-    const validos = selecionados.filter(accepts);
-    const ignorados = selecionados.filter((slot) => !accepts(slot)).map((slot) => slot.horario);
+    const validos = selecionados.filter(action.accepts);
+    const ignorados = selecionados.filter((slot) => !action.accepts(slot)).map((slot) => slot.horario);
     if (!validos.length) {
-      notify(invalidMessage, 'error');
+      notify(action.skipped, 'error');
       return;
     }
-
     try {
       await execute(validos);
-      notifySuccess(success);
-      if (ignorados.length) notify(`Ignorados: ${ignorados.join(', ')}. ${invalidMessage}`, 'info');
+      notifySuccess(action.success(validos.length));
+      if (ignorados.length) notify(`Ignorados: ${ignorados.join(', ')}. ${action.skipped}`, 'info');
     } catch (error) {
       notifyError(error);
     }
     await load();
   }
 
-  const reserve = (tipo, success) => runAction({
-    accepts: (slot) => !slot.agendamento && !slot.passado,
-    execute: (slots) => api.post('/agendamentos', { data: agenda.data, horarios: slots.map((s) => s.horario), tipo }),
-    success,
-    invalidMessage: 'Apenas horários livres e futuros podem ser reservados.',
-  });
-
-  /** Atualiza cada agendamento individualmente; continua mesmo se algum falhar. */
-  async function patchEach(slots, action) {
+  /** Atualiza cada agendamento; continua mesmo se algum falhar e informa o primeiro erro. */
+  async function patchEach(slots, operation) {
     const results = await Promise.allSettled(
-      slots.map((slot) => api.patch(`/agendamentos/${encodeURIComponent(slot.agendamento.id)}/${action}`)),
+      slots.map((slot) => api.patch(`/agendamentos/${encodeURIComponent(slot.agendamento.id)}/${operation}`)),
     );
     const failure = results.find((result) => result.status === 'rejected');
     if (failure) throw failure.reason;
   }
 
-  const actions = {
-    'btn-incluir': () => reserve(STATUS.AGENDADO_BARBEIRO, 'Atendimento incluído na agenda.'),
-    'btn-bloquear': () => reserve(STATUS.BLOQUEADO, 'Horário bloqueado.'),
-    'btn-concluir': () => runAction({
-      accepts: (slot) => CONCLUIVEIS.includes(slot.agendamento?.status),
-      execute: (slots) => patchEach(slots, 'concluir'),
-      success: 'Atendimento concluído.',
-      invalidMessage: 'Apenas atendimentos agendados podem ser concluídos.',
+  const executors = {
+    bloquear: (slots) => api.post('/agendamentos', {
+      data: agenda.data, horarios: slots.map((s) => s.horario), tipo: STATUS.BLOQUEADO,
     }),
-    'btn-cancelar': () => runAction({
-      accepts: (slot) => CANCELAVEIS.includes(slot.agendamento?.status),
-      execute: (slots) => patchEach(slots, 'cancelar'),
-      success: 'Bloqueio ou atendimento desfeito.',
-      invalidMessage: 'Só é possível desfazer bloqueios e atendimentos incluídos por você.',
-    }),
+    cancelar: (slots) => patchEach(slots, 'cancelar'),
+    concluir: (slots) => patchEach(slots, 'concluir'),
   };
-  for (const [id, action] of Object.entries(actions)) {
-    const button = byId(id);
-    button.addEventListener('click', () => withBusy(button, action));
+  for (const [name, button] of Object.entries(actionButtons)) {
+    // Reavalia os botões só depois que withBusy reabilitar o botão clicado.
+    button.addEventListener('click', () => withBusy(button, () => runAction(name, executors[name]))
+      .then(updateActionButtons));
   }
+
+  const novoAtendimento = createNovoAtendimento({
+    usuario,
+    onCreated: async (data) => {
+      form.elements.data.value = data;
+      await load();
+    },
+  });
+  byId('btn-novo-atendimento').addEventListener('click', () => novoAtendimento.open(form.elements.data.value));
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     withBusy(form.querySelector('[type="submit"]'), load);
   });
 
+  form.elements.data.value = todayIso();
   await load();
 }
