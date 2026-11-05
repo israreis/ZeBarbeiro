@@ -576,10 +576,6 @@ body.is-ready main {
 .barber-card:nth-child(3) { animation-delay: 100ms; }
 .barber-card:nth-child(n + 4) { animation-delay: 150ms; }
 
-.barber-card.is-unavailable {
-  opacity: 0.6;
-}
-
 .barber-card-head {
   display: flex;
   align-items: center;

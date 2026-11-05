@@ -11,10 +11,8 @@ import { avatar } from '../components/avatar.js';
 const QUALQUER_BARBEIRO = '';
 
 /** Cartão de um barbeiro com os horários livres como opções selecionáveis. */
-function barberCard({ barbeiro, atende, horarios }) {
-  let resumo = `${horarios.length} ${horarios.length === 1 ? 'horário livre' : 'horários livres'}`;
-  if (!atende) resumo = 'Não atende nesta data';
-  else if (!horarios.length) resumo = 'Agenda cheia nesta data';
+function barberCard({ barbeiro, horarios }) {
+  const resumo = `${horarios.length} ${horarios.length === 1 ? 'horário livre' : 'horários livres'}`;
 
   const slots = horarios.map((horario) => {
     const id = `slot-${barbeiro.id}-${horario.replace(':', '')}`;
@@ -26,7 +24,7 @@ function barberCard({ barbeiro, atende, horarios }) {
     ]);
   });
 
-  return el('article', { className: `panel barber-card${horarios.length ? '' : ' is-unavailable'}` }, [
+  return el('article', { className: 'panel barber-card' }, [
     el('header', { className: 'barber-card-head' }, [
       avatar(barbeiro, 'lg'),
       el('div', {}, [
@@ -34,13 +32,11 @@ function barberCard({ barbeiro, atende, horarios }) {
         el('p', { className: 'barber-card-meta', text: resumo }),
       ]),
     ]),
-    horarios.length
-      ? el('fieldset', { className: 'slot-grid' }, [
-        el('legend', { className: 'visually-hidden', text: `Horários livres com ${barbeiro.nome}` }),
-        ...slots,
-      ])
-      : null,
-  ].filter(Boolean));
+    el('fieldset', { className: 'slot-grid' }, [
+      el('legend', { className: 'visually-hidden', text: `Horários livres com ${barbeiro.nome}` }),
+      ...slots,
+    ]),
+  ]);
 }
 
 function emptyState(message) {
@@ -90,6 +86,18 @@ if (usuario) {
     );
   }
 
+  /** Mensagem quando nenhum barbeiro tem horário livre, considerando o filtro de barbeiro. */
+  function semHorariosMessage() {
+    const escolhido = disponibilidade.barbeiros[0];
+    if (value(form, 'barbeiroId') && escolhido) {
+      return escolhido.atende
+        ? `${escolhido.barbeiro.nome} não tem horários livres nesta data. Experimente outro dia ou outro barbeiro.`
+        : `${escolhido.barbeiro.nome} não atende nesta data. Experimente outro dia ou outro barbeiro.`;
+    }
+    if (!disponibilidade.barbeiros.length) return 'Nenhum barbeiro realiza este serviço no momento.';
+    return 'Nenhum barbeiro tem horários livres nesta data. Experimente outro dia.';
+  }
+
   async function search() {
     bar.hidden = true;
     if (!form.elements.servicoId.value) {
@@ -105,13 +113,11 @@ if (usuario) {
         barbeiroId: value(form, 'barbeiroId'),
         data: value(form, 'data'),
       });
-      const cards = disponibilidade.barbeiros.map(barberCard);
-      results.replaceChildren(...(cards.length
-        ? cards
-        : [emptyState('Nenhum barbeiro realiza este serviço no momento.')]));
-      if (cards.length && disponibilidade.barbeiros.every((b) => !b.horarios.length)) {
-        results.prepend(emptyState('Não há horários livres nesta data. Experimente outro dia.'));
-      }
+      // Só aparecem barbeiros com pelo menos um horário livre na data.
+      const disponiveis = disponibilidade.barbeiros.filter((item) => item.horarios.length > 0);
+      results.replaceChildren(...(disponiveis.length
+        ? disponiveis.map(barberCard)
+        : [emptyState(semHorariosMessage())]));
     } catch (error) {
       disponibilidade = null;
       results.replaceChildren(emptyState('Não foi possível carregar os horários. Tente novamente.'));
