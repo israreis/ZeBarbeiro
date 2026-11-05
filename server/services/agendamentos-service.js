@@ -29,7 +29,7 @@ export function createAgendamentosService({ store, clock }) {
     horarioInicio: ag.horarioInicio,
     horarioFim: ag.horarioFim,
     status: ag.status,
-    cliente: ag.clienteId ? nomeUsuario(db, ag.clienteId) : null,
+    cliente: ag.clienteId ? nomeUsuario(db, ag.clienteId) : (ag.clienteNome ?? null),
     barbeiro: nomeUsuario(db, ag.barbeiroId),
     servico: servicoResumo(db, ag.servicoId),
   });
@@ -66,17 +66,46 @@ export function createAgendamentosService({ store, clock }) {
     }
   }
 
-  function novoAgendamento({ barbeiroId, clienteId = null, servicoId = null, data, horario, status }) {
+  function novoAgendamento({
+    barbeiroId, clienteId = null, clienteNome, clienteTelefone, servicoId = null, data, horario, status,
+  }) {
     return {
       id: crypto.randomUUID(),
       barbeiroId,
       clienteId,
+      ...(clienteNome ? { clienteNome } : {}),
+      ...(clienteTelefone ? { clienteTelefone } : {}),
       servicoId,
       data,
       horarioInicio: horario,
       horarioFim: slotEnd(horario),
       status,
       criadoEm: new Date().toISOString(),
+    };
+  }
+
+  /** Serviço ativo que o barbeiro oferece. */
+  function findServicoDoBarbeiro(db, barbeiro, servicoId) {
+    const servico = db.servicos.find((s) => s.id === servicoId && s.ativo);
+    if (!servico || !barbeiro.servicoIds.includes(servicoId)) {
+      throw unprocessable('Este serviço não é oferecido pelo barbeiro selecionado.');
+    }
+    return servico;
+  }
+
+  /**
+   * Cliente de um atendimento incluído pelo barbeiro: um cliente cadastrado (clienteId)
+   * ou um cliente sem cadastro, identificado por nome e, opcionalmente, telefone.
+   */
+  function parseClienteManual(db, body) {
+    if (body?.clienteId) {
+      const cliente = db.usuarios.find((u) => u.id === body.clienteId && u.perfil === ROLES.CLIENTE);
+      if (!cliente) throw unprocessable('Cliente não encontrado.');
+      return { clienteId: cliente.id };
+    }
+    return {
+      clienteNome: v.requiredString(body?.clienteNome, 'nome do cliente'),
+      clienteTelefone: body?.clienteTelefone ? v.phone(body.clienteTelefone, 'telefone do cliente') : undefined,
     };
   }
 
@@ -149,7 +178,8 @@ export function createAgendamentosService({ store, clock }) {
     /**
      * Cria agendamentos para um ou mais horários de forma atômica (tudo ou nada).
      * - Cliente: reserva um serviço com um barbeiro.
-     * - Barbeiro: registra atendimento avulso ("Agendado Barbeiro") ou bloqueia horários.
+     * - Barbeiro: inclui um atendimento manualmente ("Agendado Barbeiro", com cliente e serviço)
+     *   ou bloqueia horários.
      */
     create(actor, body) {
       const data = v.isoDate(body?.data);
@@ -160,10 +190,7 @@ export function createAgendamentosService({ store, clock }) {
         const servicoId = v.requiredString(body?.servicoId, 'serviço');
         return store.update((db) => {
           const barbeiro = findBarbeiro(db, barbeiroId, { exigirAtivo: true });
-          const servico = db.servicos.find((s) => s.id === servicoId && s.ativo);
-          if (!servico || !barbeiro.servicoIds.includes(servicoId)) {
-            throw unprocessable('Este serviço não é oferecido pelo barbeiro selecionado.');
-          }
+          findServicoDoBarbeiro(db, barbeiro, servicoId);
           validarHorarios(db, barbeiro, data, horarios);
           const criados = horarios.map((horario) => novoAgendamento({
             barbeiroId, clienteId: actor.id, servicoId, data, horario, status: STATUS.AGENDADO,
@@ -175,11 +202,16 @@ export function createAgendamentosService({ store, clock }) {
 
       if (actor.perfil === ROLES.BARBEIRO) {
         const status = v.oneOf(body?.tipo, 'tipo', TIPOS_RESERVA_BARBEIRO);
+        const isAtendimento = status === STATUS.AGENDADO_BARBEIRO;
+        const servicoId = isAtendimento ? v.requiredString(body?.servicoId, 'serviço') : null;
         return store.update((db) => {
           const barbeiro = findBarbeiro(db, actor.id, { exigirAtivo: false });
+          // Atendimento incluído pelo barbeiro exige cliente e serviço; bloqueio não tem nenhum dos dois.
+          const cliente = isAtendimento ? parseClienteManual(db, body) : {};
+          if (isAtendimento) findServicoDoBarbeiro(db, barbeiro, servicoId);
           validarHorarios(db, barbeiro, data, horarios);
           const criados = horarios.map((horario) => novoAgendamento({
-            barbeiroId: barbeiro.id, data, horario, status,
+            barbeiroId: barbeiro.id, ...cliente, servicoId, data, horario, status,
           }));
           db.agendamentos.push(...criados);
           return criados.map((ag) => detalhar(db, ag));

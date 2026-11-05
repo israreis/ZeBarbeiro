@@ -135,6 +135,28 @@ describe('autenticação', () => {
     assert.equal(res.body.perfil, 'cliente');
   });
 
+  test('usuário edita os próprios dados; trocar o e-mail exige a senha atual', async () => {
+    const token = await login('c1@teste.com');
+    const dados = { nome: 'Novo Nome', email: 'c1@teste.com', telefone: '31911112222', dataNascimento: '1990-01-01' };
+
+    const ok = await api('PUT', '/api/auth/me', { token, body: { ...dados, perfil: 'administrador' } });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.nome, 'Novo Nome');
+    assert.equal(ok.body.perfil, 'cliente', 'perfil não pode ser alterado');
+
+    const semSenha = await api('PUT', '/api/auth/me', { token, body: { ...dados, email: 'novo@teste.com' } });
+    assert.equal(semSenha.status, 422);
+    const duplicado = await api('PUT', '/api/auth/me', {
+      token, body: { ...dados, email: 'c2@teste.com', senhaAtual: SENHA },
+    });
+    assert.equal(duplicado.status, 409);
+    const comSenha = await api('PUT', '/api/auth/me', {
+      token, body: { ...dados, email: 'novo@teste.com', senhaAtual: SENHA },
+    });
+    assert.equal(comSenha.status, 200);
+    assert.equal(comSenha.body.email, 'novo@teste.com');
+  });
+
   test('troca de senha exige a senha atual e encerra outras sessões', async () => {
     const outraSessao = await login('c1@teste.com');
     const token = await login('c1@teste.com');
@@ -277,6 +299,39 @@ describe('agenda e agendamentos', () => {
     assert.equal((await api('PATCH', '/api/agendamentos/a-hoje/concluir', { token })).status, 200);
     assert.equal((await api('PATCH', '/api/agendamentos/a-c2/concluir', { token })).status, 422, 'data futura');
     assert.equal((await api('PATCH', '/api/agendamentos/a-c2/cancelar', { token })).status, 422, 'agendamento de cliente');
+  });
+
+  test('barbeiro inclui atendimento manual com cliente cadastrado ou sem cadastro', async () => {
+    const token = await login('b1@teste.com');
+    const incluir = (extra) => api('POST', '/api/agendamentos', {
+      token, body: { data: '2026-11-06', tipo: 'Agendado Barbeiro', servicoId: 's1', ...extra },
+    });
+
+    const cadastrado = await incluir({ horarios: ['08:00'], clienteId: 'c1' });
+    assert.equal(cadastrado.status, 201);
+    assert.equal(cadastrado.body[0].cliente, 'Usuário c1');
+    assert.equal(cadastrado.body[0].servico.valor, 50);
+    assert.equal(cadastrado.body[0].status, 'Agendado Barbeiro');
+
+    const avulso = await incluir({ horarios: ['08:30'], clienteNome: 'Carlos', clienteTelefone: '31988887777' });
+    assert.equal(avulso.status, 201);
+    assert.equal(avulso.body[0].cliente, 'Carlos');
+
+    assert.equal((await incluir({ horarios: ['10:00'] })).status, 422, 'cliente obrigatório');
+    assert.equal((await incluir({ horarios: ['10:00'], clienteId: 'b2' })).status, 422, 'precisa ser cliente');
+    assert.equal((await incluir({ horarios: ['10:00'], clienteNome: 'X', servicoId: 's2' })).status, 422, 'serviço inativo');
+    assert.equal((await incluir({ horarios: ['08:00'], clienteNome: 'X' })).status, 409, 'horário ocupado');
+  });
+
+  test('lista de clientes é restrita a barbeiros e administradores e não expõe e-mail', async () => {
+    const barbeiro = await login('b1@teste.com');
+    const { status, body } = await api('GET', '/api/clientes', { token: barbeiro });
+    assert.equal(status, 200);
+    assert.deepEqual(body.map((c) => c.id).sort(), ['c1', 'c2']);
+    assert.equal(body[0].email, undefined);
+
+    const cliente = await login('c1@teste.com');
+    assert.equal((await api('GET', '/api/clientes', { token: cliente })).status, 403);
   });
 
   test('barbeiro não altera agendamentos de outro barbeiro', async () => {

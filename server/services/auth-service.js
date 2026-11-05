@@ -53,6 +53,33 @@ export function createAuthService({ store, sessions, loginLimiter }) {
       return toPublicUser(usuario);
     },
 
+    /**
+     * Atualiza os dados do próprio usuário. Perfil e senha não são alterados aqui.
+     * Trocar o e-mail (que é o login) exige confirmar a senha atual e encerra as outras sessões.
+     */
+    async updateProfile(usuario, body, currentToken) {
+      const dados = {
+        nome: v.requiredString(body?.nome, 'nome'),
+        email: v.email(body?.email),
+        telefone: v.phone(body?.telefone),
+        dataNascimento: v.optionalIsoDate(body?.dataNascimento, 'data de nascimento'),
+      };
+
+      const emailAlterado = dados.email !== usuario.email;
+      if (emailAlterado && !(await verifyPassword(String(body?.senhaAtual ?? ''), usuario.senhaHash))) {
+        throw unprocessable('Para alterar o e-mail, confirme sua senha atual.');
+      }
+
+      const atualizado = await store.update((db) => {
+        if (emailAlterado && db.usuarios.some((u) => u.id !== usuario.id && u.email === dados.email)) {
+          throw conflict('Este e-mail já está cadastrado.');
+        }
+        return Object.assign(db.usuarios.find((u) => u.id === usuario.id), dados);
+      });
+      if (emailAlterado) sessions.revokeUser(usuario.id, currentToken);
+      return toPublicUser(atualizado);
+    },
+
     async changePassword(usuario, body, currentToken) {
       const senhaAtual = typeof body?.senhaAtual === 'string' ? body.senhaAtual : '';
       const novaSenha = v.password(body?.novaSenha, 'nova senha');

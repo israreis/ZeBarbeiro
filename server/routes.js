@@ -11,7 +11,9 @@ const ANY_ROLE = [ADMIN, BARBEIRO, CLIENTE];
  * o corpo da resposta (status 200 por padrão; `ctx.status` permite alterá-lo).
  */
 export function buildRouter({ sessions, store, services }) {
-  const { auth, barbeiros, servicos, unidades, agendamentos } = services;
+  const {
+    auth, barbeiros, servicos, unidades, clientes, agendamentos,
+  } = services;
 
   /** Middleware de autenticação/autorização baseado em perfil. */
   const requireRole = (...roles) => (ctx) => {
@@ -40,11 +42,13 @@ export function buildRouter({ sessions, store, services }) {
       noContent(ctx);
     })
     .get('/api/auth/me', authenticated, (ctx) => toPublicUser(ctx.user))
+    .put('/api/auth/me', authenticated, (ctx) => auth.updateProfile(ctx.user, ctx.body, ctx.token))
     .put('/api/auth/senha', authenticated, async (ctx) => {
       await auth.changePassword(ctx.user, ctx.body, ctx.token);
       noContent(ctx);
     })
     .post('/api/clientes', async (ctx) => created(ctx, await auth.registerCliente(ctx.body)))
+    .get('/api/clientes', requireRole(ADMIN, BARBEIRO), () => clientes.list())
 
     // Cadastros administrativos
     .get('/api/barbeiros', authenticated, (ctx) => barbeiros.list(ctx.user))
