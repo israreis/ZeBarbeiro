@@ -8,6 +8,7 @@ import { STATUS, formatCurrency, formatDate, todayIso } from '../core/format.js'
 import { notify, notifyError, notifySuccess } from '../core/notify.js';
 import { statusBadge } from '../components/status-badge.js';
 import { bindSlotSelection } from '../components/slot-selection.js';
+import { confirmDialog } from '../components/confirm-dialog.js';
 
 const STATUS_INCLUSAO = STATUS.AGENDADO_BARBEIRO;
 
@@ -23,6 +24,12 @@ const SELECTION_ACTIONS = {
   },
   cancelar: {
     accepts: (slot) => [STATUS.BLOQUEADO, STATUS.AGENDADO_BARBEIRO].includes(slot.agendamento?.status),
+    confirm: (slots) => ({
+      title: slots.length === 1 ? 'Desfazer este horário?' : `Desfazer ${slots.length} horários?`,
+      message: `Horários: ${slots.map((s) => s.horario).join(', ')}. Bloqueios e atendimentos incluídos por você serão cancelados e o horário ficará livre.`,
+      confirmLabel: 'Desfazer',
+      danger: true,
+    }),
     success: () => 'Bloqueio ou atendimento desfeito.',
     skipped: 'Só é possível desfazer bloqueios e atendimentos incluídos por você.',
   },
@@ -209,6 +216,7 @@ if (usuario) {
       notify(action.skipped, 'error');
       return;
     }
+    if (action.confirm && !(await confirmDialog(action.confirm(validos)))) return;
     try {
       await execute(validos);
       notifySuccess(action.success(validos.length));

@@ -6,6 +6,7 @@ import {
   STATUS, addDaysIso, formatDateLong, nowTime, todayIso,
 } from '../core/format.js';
 import { notifyError, notifySuccess } from '../core/notify.js';
+import { confirmDialog } from '../components/confirm-dialog.js';
 
 /** Só agendamentos futuros feitos pelo próprio cliente podem ser cancelados (regra repetida no servidor). */
 function isCancelavel(agendamento) {
@@ -18,8 +19,15 @@ function cancelButton(agendamento, reload) {
   if (!isCancelavel(agendamento)) return null;
   const button = el('button', { type: 'button', className: 'btn-table', text: 'Cancelar' });
   button.addEventListener('click', () => withBusy(button, async () => {
-    const quando = `${formatDateLong(agendamento.data)} às ${agendamento.horarioInicio}`;
-    if (!window.confirm(`Cancelar o agendamento de ${quando}?`)) return;
+    const confirmado = await confirmDialog({
+      title: 'Cancelar agendamento?',
+      message: `${agendamento.servico?.nome ?? 'Atendimento'} com ${agendamento.barbeiro}, `
+        + `${formatDateLong(agendamento.data)} às ${agendamento.horarioInicio}. O horário ficará livre para outras pessoas.`,
+      confirmLabel: 'Cancelar agendamento',
+      cancelLabel: 'Manter agendamento',
+      danger: true,
+    });
+    if (!confirmado) return;
     try {
       await api.patch(`/agendamentos/${encodeURIComponent(agendamento.id)}/cancelar`);
       notifySuccess('Agendamento cancelado.');

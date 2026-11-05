@@ -529,3 +529,41 @@ input[type='time']::-webkit-calendar-picker-indicator {
     display: none;
   }
 }
+
+/* ---------- Diálogo de confirmação ---------- */
+
+.modal-sm-app {
+  max-width: 420px;
+}
+
+.confirm-dialog .modal-body {
+  padding: 1.75rem 1.75rem 0.5rem;
+}
+
+.confirm-dialog .modal-title {
+  margin: 0 0 0.6rem;
+  text-align: left;
+}
+
+.confirm-message {
+  margin: 0;
+  color: var(--sand);
+}
+
+.confirm-dialog .modal-footer {
+  justify-content: flex-end;
+  padding: 1.25rem 1.75rem 1.5rem;
+  border-top: 0;
+}
+
+.btn-danger-app {
+  border-color: var(--brick);
+  background: var(--brick);
+  color: var(--espresso);
+}
+
+.btn-danger-app:hover:not(:disabled) {
+  border-color: #dd9686;
+  background: #dd9686;
+  color: var(--espresso);
+}
