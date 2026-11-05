@@ -567,7 +567,7 @@ body.is-ready main {
   display: grid;
   grid-template-columns: minmax(200px, 260px) 1fr;
   gap: 1.5rem;
-  align-items: start;
+  align-items: center;
   padding: 1.5rem;
   animation: rise-in 360ms var(--ease-out) both;
 }
