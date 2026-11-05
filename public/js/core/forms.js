@@ -44,3 +44,31 @@ export function setMatchValidity(form, name, confirmName, message) {
   if (!confirm) return;
   confirm.setCustomValidity(rawValue(form, name) === rawValue(form, confirmName) ? '' : message);
 }
+
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const MAX_CURRENCY_DIGITS = 8; // até R$ 999.999,99
+
+/** Valor em reais (número) → texto exibido no campo com máscara, ex.: 49.9 → "R$ 49,90". */
+export function formatCurrencyInput(amount) {
+  return typeof amount === 'number' && Number.isFinite(amount) ? BRL.format(amount) : '';
+}
+
+/** Texto do campo com máscara → valor em reais (número), ex.: "R$ 1.234,50" → 1234.5. */
+export function parseCurrency(text) {
+  const digits = String(text ?? '').replace(/\D/g, '');
+  return digits ? Number(digits) / 100 : 0;
+}
+
+/**
+ * Máscara de moeda (R$) estilo caixa registradora: os dígitos entram pela direita,
+ * como centavos. Ex.: digitar 4, 9, 9, 0 resulta em "R$ 49,90".
+ */
+export function applyCurrencyMask(input) {
+  input.setAttribute('inputmode', 'numeric');
+  input.setAttribute('autocomplete', 'off');
+  input.addEventListener('input', () => {
+    const digits = input.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, MAX_CURRENCY_DIGITS);
+    input.value = digits ? formatCurrencyInput(Number(digits) / 100) : '';
+    input.setCustomValidity('');
+  });
+}
