@@ -1,0 +1,245 @@
+/* ==========================================================================
+   Páginas de acesso (login e cadastro)
+   ========================================================================== */
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  min-height: 100vh;
+}
+
+/* ---------- Painel com a foto da barbearia ---------- */
+
+.auth-visual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(27, 19, 14, 0.35) 0%, rgba(27, 19, 14, 0.92) 85%),
+    url('../img/capa-barbearia.jpg') center / cover no-repeat;
+}
+
+/* Faixa de poste de barbeiro: o detalhe característico das telas de acesso. */
+.auth-visual::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--brass) 0 14px,
+    var(--ivory) 14px 28px,
+    var(--espresso) 28px 42px
+  );
+  background-size: 100% 59.4px;
+  opacity: 0.85;
+  animation: pole 6s linear infinite;
+}
+
+@keyframes pole {
+  to { background-position: 0 59.4px; }
+}
+
+.auth-visual .brand img {
+  width: 56px;
+  height: 56px;
+}
+
+.auth-quote {
+  max-width: 26ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+  line-height: 1.2;
+  animation: rise-in 700ms var(--ease-out) both;
+}
+
+.auth-quote-caption {
+  margin: 0.75rem 0 0;
+  color: var(--sand);
+  animation: rise-in 700ms 120ms var(--ease-out) both;
+}
+
+/* ---------- Formulário ---------- */
+
+.auth-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem clamp(1.25rem, 6vw, 5rem);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  animation: rise-in 520ms var(--ease-out) both;
+}
+
+.auth-back {
+  display: inline-block;
+  margin-bottom: 2.5rem;
+  color: var(--sand);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.auth-back:hover {
+  color: var(--brass-bright);
+}
+
+.auth-title {
+  margin: 0;
+  font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+}
+
+.auth-subtitle {
+  margin: 0.5rem 0 2rem;
+  color: var(--sand);
+}
+
+.auth-form .form-control {
+  padding: 0.7rem 0.9rem;
+}
+
+.field {
+  margin-bottom: 1.1rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .form-control {
+  padding-right: 4.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  padding: 0.3rem 0.6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sand);
+  font-size: 0.85rem;
+}
+
+.password-toggle:hover {
+  color: var(--brass-bright);
+}
+
+.auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.25rem 0 1.5rem;
+  color: var(--sand);
+  font-size: 0.9rem;
+}
+
+.auth-submit {
+  width: 100%;
+  padding-block: 0.8rem;
+  font-size: 1rem;
+}
+
+.auth-switch {
+  margin: 1.75rem 0 0;
+  color: var(--sand);
+  text-align: center;
+}
+
+/* Mensagem de erro do formulário */
+.form-alert {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--brick) 50%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--brick) 12%, transparent);
+  color: #f1c4b9;
+  animation: pop-in 220ms var(--ease-out);
+}
+
+.form-alert[hidden] {
+  display: none;
+}
+
+/* Indicador da força da senha */
+.strength {
+  display: flex;
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+
+.strength span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--seam);
+  transition: background-color var(--duration) var(--ease-out);
+}
+
+.strength[data-level='1'] span:nth-child(-n + 1) { background: var(--brick); }
+.strength[data-level='2'] span:nth-child(-n + 2) { background: var(--brass); }
+.strength[data-level='3'] span:nth-child(-n + 3) { background: var(--sage); }
+
+@media (max-width: 860px) {
+  .auth {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .auth-visual {
+    min-height: 200px;
+    padding: 1.5rem;
+  }
+
+  .auth-visual::after {
+    top: auto;
+    left: 0;
+    width: auto;
+    height: 6px;
+    background-size: 59.4px 100%;
+    animation: none;
+  }
+
+  .auth-visual {
+    gap: 1.5rem;
+  }
+
+  .auth-quote {
+    font-size: 1.35rem;
+  }
+
+  .auth-quote-caption {
+    display: none;
+  }
+
+  .auth-content {
+    justify-content: flex-start;
+    padding-top: 2rem;
+  }
+
+  .auth-back {
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}

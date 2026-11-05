@@ -1,139 +1,284 @@
 /* ==========================================================================
-   Página inicial (apresentação, login e cadastro de clientes).
+   Página inicial
    ========================================================================== */
 
-.landing-main {
-  display: flow-root;
-  padding: 0 5%;
-  background: url('../img/capa-barbearia.jpg') center top / cover no-repeat;
-  color: var(--color-white);
+/* Cabeçalho transparente sobre a foto, que ganha fundo ao rolar (sticky + blur). */
+.landing-header {
+  position: fixed;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(27, 19, 14, 0.85), rgba(27, 19, 14, 0));
+  border-bottom-color: transparent;
+  backdrop-filter: none;
+  transition: background-color 300ms var(--ease-out), border-color 300ms var(--ease-out);
 }
 
-.section-heading {
+.landing-header.is-scrolled {
+  background: rgba(27, 19, 14, 0.92);
+  border-bottom-color: var(--seam);
+  backdrop-filter: blur(10px);
+}
+
+.landing-header .nav-link {
+  color: var(--ivory);
+}
+
+.btn-lg-app {
+  padding: 0.85rem 1.75rem;
+  font-size: 1.05rem;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  margin-bottom: 0.5rem;
+  align-items: flex-end;
+  min-height: 92vh;
+  padding: 9rem 0 5rem;
+  background:
+    linear-gradient(90deg, rgba(27, 19, 14, 0.94) 0%, rgba(27, 19, 14, 0.7) 45%, rgba(27, 19, 14, 0.15) 100%),
+    linear-gradient(0deg, var(--espresso) 0%, rgba(27, 19, 14, 0) 30%),
+    url('../img/capa-barbearia.jpg') center / cover no-repeat;
 }
 
-.section-heading h2 {
-  margin: 0;
-  font-size: calc(1.375rem + 1.5vw);
+.hero-content {
+  max-width: 640px;
 }
 
-.section-heading .line {
-  flex-grow: 1;
-  border-top: 2px solid var(--color-gold);
+.hero-title {
+  margin: 0 0 1.25rem;
+  font-size: clamp(2.6rem, 1.6rem + 4vw, 4.75rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  animation: rise-in 800ms var(--ease-out) both;
 }
 
-/* ---------- Sobre nós ---------- */
-
-.about {
-  min-height: 500px;
-  padding-top: 1rem;
+.hero-text {
+  max-width: 52ch;
+  margin: 0 0 2rem;
+  color: var(--sand);
+  font-size: 1.15rem;
+  animation: rise-in 800ms 120ms var(--ease-out) both;
 }
 
-.about-text {
-  max-width: 45%;
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  animation: rise-in 800ms 240ms var(--ease-out) both;
 }
 
-/* ---------- Serviços e feedbacks ---------- */
+/* ---------- Seções ---------- */
 
 .landing-section {
-  margin: 0 auto 6rem;
+  padding: 5.5rem 0;
 }
 
-.card-dark {
-  height: 100%;
-  padding: 8px;
-  border-radius: 15px;
-  background-color: var(--color-dark-brown);
-  color: aliceblue;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.landing-section h2,
+.cta-band h2 {
+  font-size: clamp(2rem, 1.5rem + 1.8vw, 2.9rem);
 }
 
-.card-dark .card-thumb {
-  width: 100px;
-  height: 100px;
-  margin-right: 20px;
+.section-head {
+  max-width: 60ch;
+  margin-bottom: 2.75rem;
+}
+
+.section-head p {
+  margin: 0.75rem 0 0;
+  color: var(--sand);
+}
+
+/* ---------- Tabela de preços (como a lousa de uma barbearia) ---------- */
+
+.price-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--seam);
+  border-radius: var(--radius-lg);
+  background: var(--walnut);
+}
+
+.price-group {
+  padding: 2rem;
+}
+
+.price-group + .price-group {
+  border-left: 1px solid var(--seam);
+}
+
+.price-group-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.price-group-head img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   object-fit: cover;
 }
 
-.card-dark .card-title-lg {
+.price-group-head h3 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.6rem;
 }
 
-.feedback-card {
-  max-width: 500px;
-  padding: 20px;
+.price-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
-/* ---------- Produtos ---------- */
-
-.products-banner {
-  display: block;
-  width: 100%;
-  margin-bottom: 3rem;
+.price-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
 }
 
-/* ---------- Botão de acesso e modais ---------- */
-
-.btn-access {
-  background-color: var(--color-gold);
+/* Linha pontilhada entre o serviço e o preço */
+.price-list li::after {
+  content: '';
+  order: 1;
+  flex: 1;
+  border-bottom: 1px dotted var(--seam);
+  transform: translateY(-4px);
 }
 
-.btn-access img {
-  width: 20px;
+.price-list .price {
+  order: 2;
+  color: var(--brass-bright);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.modal-login {
-  position: fixed;
-  top: 10%;
-  right: 20px;
-  width: 100%;
-  max-width: 400px;
+/* ---------- História ---------- */
+
+.story {
+  border-block: 1px solid var(--seam);
+  background: var(--walnut);
+}
+
+.story p {
+  max-width: 60ch;
+  color: var(--sand);
+  font-size: 1.05rem;
+}
+
+.story-figure {
   margin: 0;
 }
 
-.modal-login .modal-content {
-  border-radius: 1rem;
+.story-figure img {
+  width: 100%;
+  border-radius: var(--radius-lg);
 }
 
-.modal-login .form-control {
-  border-radius: 20px;
+.story-figure figcaption {
+  margin-top: 0.75rem;
+  color: var(--sand);
+  font-size: 0.9rem;
 }
 
-.signup-link {
-  border: none;
-  background: none;
-  color: var(--color-brown);
-  font-weight: bold;
-  text-decoration: underline;
+/* ---------- Depoimentos ---------- */
+
+.testimonials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3rem;
 }
 
-@media (max-width: 768px) {
-  .about-text {
-    max-width: 100%;
-    font-size: small;
+.testimonial {
+  margin: 0;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--brass);
+}
+
+.testimonial blockquote {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.testimonial figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--sand);
+}
+
+.testimonial figcaption img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ---------- Chamada final ---------- */
+
+.cta-band {
+  padding: 4.5rem 0;
+  background:
+    linear-gradient(90deg, rgba(27, 19, 14, 0.92), rgba(27, 19, 14, 0.75)),
+    url('../img/capa-barbearia.jpg') center 30% / cover no-repeat;
+}
+
+.cta-band-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.cta-band h2 {
+  max-width: 22ch;
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .landing-header {
+    background: rgba(27, 19, 14, 0.95);
   }
 
-  .modal-login {
-    right: 5%;
-    width: 90%;
+  .landing-header .navbar-collapse {
+    padding: 0.75rem 0;
   }
-}
 
-@media (min-width: 769px) and (max-width: 1024px) {
-  .card-dark .card-thumb {
-    width: 75px;
-    height: 75px;
+  .price-board {
+    grid-template-columns: 1fr;
+  }
+
+  .price-group + .price-group {
+    border-left: 0;
+    border-top: 1px solid var(--seam);
+  }
+
+  .testimonials {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
 }
 
 @media (max-width: 576px) {
-  .products-banner {
-    height: 200px;
-    object-fit: cover;
+  .hero {
+    min-height: 85vh;
+    padding-bottom: 3rem;
+  }
+
+  .landing-section {
+    padding: 4rem 0;
+  }
+
+  .price-group {
+    padding: 1.5rem;
   }
 }

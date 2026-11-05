@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Zé Barbeiro: tradição, estilo e agendamento online de cortes, barba e hidratação.">
-  <title>Zé Barbeiro</title>
+  <meta name="description" content="Zé Barbeiro: cortes, barba e hidratação no Buritis, em Belo Horizonte. Agende online.">
+  <title>Zé Barbeiro | Barbearia no Buritis, BH</title>
   <link rel="icon" href="img/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -18,242 +18,180 @@
 </head>
 
 <body>
-  <header class="app-header container-fluid text-light">
+  <a class="visually-hidden-focusable" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="app-header landing-header">
     <nav class="navbar navbar-expand-lg" aria-label="Menu principal">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="index.html"><img class="app-logo" src="img/logo.png" alt="Zé Barbeiro"></a>
+      <div class="container">
+        <a class="brand" href="index.html">
+          <img src="img/logo.png" alt="">
+          <span class="brand-name">Zé Barbeiro</span>
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
           aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse justify-content-end" id="menu-principal">
+        <div class="collapse navbar-collapse justify-content-end gap-3" id="menu-principal">
           <div class="navbar-nav">
-            <a class="nav-link" href="#sobre-nos">SOBRE NÓS</a>
-            <a class="nav-link" href="#servicos">SERVIÇOS</a>
-            <a class="nav-link" href="#feedbacks">FEEDBACKS</a>
-            <a class="nav-link" href="#produtos">PRODUTOS</a>
-            <a class="nav-link" href="#contatos">CONTATO</a>
+            <a class="nav-link" href="#servicos">Serviços</a>
+            <a class="nav-link" href="#historia">Nossa história</a>
+            <a class="nav-link" href="#depoimentos">Depoimentos</a>
+            <a class="nav-link" href="#contato">Contato</a>
           </div>
-          <button type="button" class="btn btn-access" id="btn-acesso" data-bs-toggle="modal"
-            data-bs-target="#modal-login" aria-label="Acessar minha conta">
-            <img src="img/icone-usuario.png" alt="">
-          </button>
+          <a class="btn-ghost" href="login.html" data-access-link="label">Entrar</a>
         </div>
       </div>
     </nav>
-    <div class="divider-gold"></div>
   </header>
 
-  <main class="landing-main">
-    <section id="sobre-nos" class="about">
-      <div class="about-text">
-        <h1>Conheça A História<br>Da Nossa Barbearia</h1>
-        <p>
-          A barbearia foi fundada há mais de quatro décadas por um barbeiro apaixonado pela arte de cuidar dos
-          cabelos e barbas. Ao longo dos anos, o salão cresceu e evoluiu, passando de geração em geração, mas sem
-          perder suas raízes. Hoje, a barbearia é um ponto de referência para homens que buscam mais do que apenas
-          um corte: eles vêm em busca de estilo, tradição e um atendimento personalizado. O espaço combina técnicas
-          clássicas com as últimas tendências, garantindo que cada cliente saia não só satisfeito, mas com a
-          confiança renovada.
-        </p>
-      </div>
-    </section>
-
-    <section id="servicos" class="landing-section container">
-      <div class="section-heading">
-        <h2>NOSSOS SERVIÇOS</h2>
-        <div class="line"></div>
-      </div>
-      <p>Conheça nossos serviços</p>
-      <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-4">
-        <div class="col">
-          <article class="card-dark card-body">
-            <div class="d-flex align-items-center">
-              <img src="img/servico-tesoura.jpeg" class="card-thumb" alt="">
-              <h3 class="card-title-lg">CORTES DE CABELO</h3>
-            </div>
-            <p class="mt-4">Corte de Cabelo: R$ 45,00</p>
-            <p>Corte Infantil: R$ 25,00</p>
-          </article>
-        </div>
-        <div class="col">
-          <article class="card-dark card-body">
-            <div class="d-flex align-items-center">
-              <img src="img/servico-navalha.jpeg" class="card-thumb" alt="">
-              <h3 class="card-title-lg">BARBA NA NAVALHA</h3>
-            </div>
-            <p class="mt-4">Barba com Navalha: R$ 65,00</p>
-            <p>Barba Desenhada: R$ 80,00</p>
-          </article>
-        </div>
-        <div class="col">
-          <article class="card-dark card-body">
-            <div class="d-flex align-items-center">
-              <img src="img/servico-shampoo.jpeg" class="card-thumb" alt="">
-              <h3 class="card-title-lg">HIDRATAÇÃO</h3>
-            </div>
-            <p class="mt-4">Hidratação Cabelo: R$ 72,99</p>
-            <p>Hidratação Barba: R$ 85,00</p>
-          </article>
+  <main id="conteudo">
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="hero-title">A barbearia do Buritis há mais de quarenta anos.</h1>
+          <p class="hero-text">
+            Corte clássico ou moderno, barba na navalha e hidratação, feitos por quem aprendeu o ofício de
+            geração em geração. Escolha o barbeiro e o horário pelo site.
+          </p>
+          <div class="hero-actions">
+            <a class="btn-app btn-lg-app" href="login.html" data-access-link>Agendar horário</a>
+            <a class="btn-ghost btn-lg-app" href="#servicos">Ver serviços e preços</a>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="feedbacks" class="landing-section container">
-      <div class="section-heading">
-        <div class="line"></div>
-        <h2>FEEDBACKS</h2>
-      </div>
-      <div class="row row-cols-1 row-cols-lg-2 g-4 justify-content-center">
-        <div class="col d-flex justify-content-center">
-          <article class="card-dark feedback-card">
-            <div class="d-flex align-items-center">
-              <img src="img/feedback-joao.jpeg" class="card-thumb" alt="Foto de João Pedro">
-              <div>
-                <h3 class="h5 mb-0">João Pedro</h3>
-                <p class="mt-2">A barbearia oferece atendimento de qualidade e cortes precisos em um ambiente
-                  acolhedor. Recomendo.</p>
-              </div>
-            </div>
-          </article>
+    <section id="servicos" class="landing-section">
+      <div class="container">
+        <div class="section-head">
+          <h2>Serviços e preços</h2>
+          <p>Valores de referência. O preço final aparece ao escolher o serviço no agendamento.</p>
         </div>
-        <div class="col d-flex justify-content-center">
-          <article class="card-dark feedback-card">
-            <div class="d-flex align-items-center">
-              <img src="img/feedback-murilo.jpeg" class="card-thumb" alt="Foto de Murilo Marques">
-              <div>
-                <h3 class="h5 mb-0">Murilo Marques</h3>
-                <p class="mt-2">Consegui cortar meu cabelo muito rápido e com qualidade. Ambiente agradável e
-                  barbeiros atenciosos e legais.</p>
-              </div>
-            </div>
+
+        <div class="price-board">
+          <article class="price-group">
+            <header class="price-group-head">
+              <img src="img/servico-tesoura.jpeg" alt="">
+              <h3>Cabelo</h3>
+            </header>
+            <ul class="price-list">
+              <li><span>Corte de cabelo</span><span class="price">R$ 45</span></li>
+              <li><span>Corte infantil</span><span class="price">R$ 25</span></li>
+            </ul>
+          </article>
+
+          <article class="price-group">
+            <header class="price-group-head">
+              <img src="img/servico-navalha.jpeg" alt="">
+              <h3>Barba</h3>
+            </header>
+            <ul class="price-list">
+              <li><span>Barba com navalha</span><span class="price">R$ 65</span></li>
+              <li><span>Barba desenhada</span><span class="price">R$ 80</span></li>
+            </ul>
+          </article>
+
+          <article class="price-group">
+            <header class="price-group-head">
+              <img src="img/servico-shampoo.jpeg" alt="">
+              <h3>Hidratação</h3>
+            </header>
+            <ul class="price-list">
+              <li><span>Hidratação de cabelo</span><span class="price">R$ 72,99</span></li>
+              <li><span>Hidratação de barba</span><span class="price">R$ 85</span></li>
+            </ul>
           </article>
         </div>
       </div>
     </section>
 
-    <section id="produtos" class="landing-section container">
-      <div class="section-heading">
-        <div class="line"></div>
-        <h2>PRODUTOS</h2>
-        <div class="line"></div>
+    <section id="historia" class="landing-section story">
+      <div class="container">
+        <div class="row g-5 align-items-center">
+          <div class="col-lg-6">
+            <h2>Uma cadeira que passou de pai para filho</h2>
+            <p>
+              A barbearia foi fundada há mais de quatro décadas por um barbeiro apaixonado pelo ofício. O salão
+              cresceu e passou de geração em geração sem perder as raízes: atendimento sem pressa, toalha quente
+              e conversa boa.
+            </p>
+            <p>
+              Hoje combinamos as técnicas clássicas com o que há de novo em cortes e cuidados, para que cada
+              cliente saia satisfeito e confiante.
+            </p>
+          </div>
+          <div class="col-lg-6">
+            <figure class="story-figure">
+              <img src="img/banner-produtos.jpg"
+                alt="Produtos usados e vendidos na barbearia: pomada, shampoo, óleo, creme e spray">
+              <figcaption>Pomadas, óleos e shampoos que usamos na cadeira também estão à venda no balcão.</figcaption>
+            </figure>
+          </div>
+        </div>
       </div>
-      <p>Conheça nossos produtos</p>
-      <img class="products-banner" src="img/banner-produtos.jpg"
-        alt="Produtos da barbearia: pomada, shampoo, óleo, creme e spray">
+    </section>
+
+    <section id="depoimentos" class="landing-section">
+      <div class="container">
+        <div class="section-head">
+          <h2>Quem senta na cadeira volta</h2>
+        </div>
+        <div class="testimonials">
+          <figure class="testimonial">
+            <blockquote>
+              <p>Atendimento de qualidade e cortes precisos em um ambiente acolhedor. Recomendo.</p>
+            </blockquote>
+            <figcaption>
+              <img src="img/feedback-joao.jpeg" alt="">
+              <span>João Pedro</span>
+            </figcaption>
+          </figure>
+          <figure class="testimonial">
+            <blockquote>
+              <p>Consegui cortar o cabelo rápido e com qualidade. Ambiente agradável e barbeiros atenciosos.</p>
+            </blockquote>
+            <figcaption>
+              <img src="img/feedback-murilo.jpeg" alt="">
+              <span>Murilo Marques</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="container cta-band-inner">
+        <h2>Escolha o barbeiro e o horário que preferir.</h2>
+        <a class="btn-app btn-lg-app" href="cadastro.html">Criar conta e agendar</a>
+      </div>
     </section>
   </main>
 
-  <footer class="app-footer text-light text-center">
-    <div class="row justify-content-between m-0">
-      <div class="col-12 col-md-4 mb-3">
-        <h2 class="footer-title">ENDEREÇO</h2>
-        <p>Av. Aggeo Pio Sobrinho, 577, Buritis, Belo Horizonte - MG</p>
+  <footer class="app-footer" id="contato">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-12 col-md-4">
+          <h2>Endereço</h2>
+          <p class="mb-0">Av. Aggeo Pio Sobrinho, 577<br>Buritis, Belo Horizonte - MG</p>
+        </div>
+        <div class="col-12 col-md-4">
+          <h2>Contato</h2>
+          <ul>
+            <li><a href="mailto:barberapp@gmail.com">barberapp@gmail.com</a></li>
+            <li><a href="tel:+5531912345678">(31) 91234-5678</a></li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-4">
+          <h2>Redes sociais</h2>
+          <ul>
+            <li class="social-link"><img src="img/icone-instagram.png" alt="Instagram"> @agenda_barber</li>
+            <li class="social-link"><img src="img/icone-facebook.png" alt="Facebook"> @agenda_barber</li>
+          </ul>
+        </div>
       </div>
-      <div class="col-12 col-md-4 mb-3" id="contatos">
-        <h2 class="footer-title">CONTATO</h2>
-        <ul class="list-unstyled">
-          <li class="mb-2"><a href="mailto:barberapp@gmail.com">barberapp@gmail.com</a> · (31) 91234-5678</li>
-          <li class="mb-2"><a href="mailto:contato.barberapp@gmail.com">contato.barberapp@gmail.com</a> · (31) 98765-4321</li>
-        </ul>
-      </div>
-      <div class="col-12 col-md-4 mb-3">
-        <h2 class="footer-title">REDES SOCIAIS</h2>
-        <ul class="list-unstyled">
-          <li class="mb-2"><img class="social-icon" src="img/icone-instagram.png" alt="Instagram"> @agenda_barber</li>
-          <li class="mb-2"><img class="social-icon" src="img/icone-facebook.png" alt="Facebook"> @agenda_barber</li>
-        </ul>
-      </div>
+      <p class="footer-bottom mb-0">© Zé Barbeiro. Todos os direitos reservados.</p>
     </div>
-    <div class="divider-gold"></div>
-    <p class="footer-copyright">© Zé Barbeiro. Todos os direitos reservados.</p>
   </footer>
-
-  <!-- Login -->
-  <div class="modal fade" id="modal-login" tabindex="-1" aria-labelledby="modal-login-titulo" aria-hidden="true">
-    <div class="modal-dialog modal-login">
-      <form class="modal-content" id="form-login" novalidate>
-        <div class="modal-header border-0">
-          <h2 class="modal-title fs-4" id="modal-login-titulo">ACESSO DO USUÁRIO</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body px-4">
-          <label for="login-email" class="form-label">E-mail</label>
-          <input type="email" class="form-control mb-3" id="login-email" name="email" placeholder="email@exemplo.com"
-            autocomplete="username" required>
-          <label for="login-senha" class="form-label">Senha</label>
-          <input type="password" class="form-control mb-3" id="login-senha" name="senha" placeholder="Digite a senha"
-            autocomplete="current-password" required>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="login-lembrar" name="lembrar">
-            <label class="form-check-label" for="login-lembrar">Lembrar-me</label>
-          </div>
-          <div class="text-center">
-            <button type="submit" class="btn-app mt-3">Entrar</button>
-          </div>
-        </div>
-        <div class="modal-footer flex-column">
-          <span>Não tem uma conta?</span>
-          <button type="button" class="signup-link" data-bs-toggle="modal" data-bs-target="#modal-cadastro">
-            Cadastre-se
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Cadastro de cliente -->
-  <div class="modal fade" id="modal-cadastro" tabindex="-1" aria-labelledby="modal-cadastro-titulo" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <form class="modal-content" id="form-cadastro" novalidate>
-        <div class="modal-header">
-          <h2 class="modal-title fs-5" id="modal-cadastro-titulo">CADASTRE-SE</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="cadastro-nome" class="form-label">Nome</label>
-              <input type="text" class="form-control" id="cadastro-nome" name="nome" maxlength="120"
-                autocomplete="name" required>
-            </div>
-            <div class="col-md-6">
-              <label for="cadastro-telefone" class="form-label">Telefone</label>
-              <input type="tel" class="form-control" id="cadastro-telefone" name="telefone" placeholder="(31)99999-9999"
-                autocomplete="tel" required>
-            </div>
-            <div class="col-md-6">
-              <label for="cadastro-email" class="form-label">E-mail</label>
-              <input type="email" class="form-control" id="cadastro-email" name="email" autocomplete="email" required>
-            </div>
-            <div class="col-md-6">
-              <label for="cadastro-confirmar-email" class="form-label">Confirmar e-mail</label>
-              <input type="email" class="form-control" id="cadastro-confirmar-email" name="confirmarEmail"
-                autocomplete="email" required>
-            </div>
-            <div class="col-md-6">
-              <label for="cadastro-senha" class="form-label">Senha <small>(mínimo 8 caracteres)</small></label>
-              <input type="password" class="form-control" id="cadastro-senha" name="senha" minlength="8"
-                autocomplete="new-password" required>
-            </div>
-            <div class="col-md-6">
-              <label for="cadastro-confirmar-senha" class="form-label">Confirmar senha</label>
-              <input type="password" class="form-control" id="cadastro-confirmar-senha" name="confirmarSenha"
-                autocomplete="new-password" required>
-            </div>
-            <div class="col-md-6">
-              <label for="cadastro-nascimento" class="form-label">Data de nascimento</label>
-              <input type="date" class="form-control" id="cadastro-nascimento" name="dataNascimento" autocomplete="bday">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-app" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-app">Cadastrar</button>
-        </div>
-      </form>
-    </div>
-  </div>
 </body>
 
 </html>

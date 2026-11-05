@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -19,51 +19,64 @@
 <body data-nav="unidades">
   <div id="app-header"></div>
 
-  <main>
-    <h1 class="page-title">UNIDADES CADASTRADAS</h1>
-    <div class="table-wrapper">
-      <table class="table table-app">
-        <thead>
-          <tr>
-            <th scope="col">UNIDADE</th>
-            <th scope="col" class="hide-sm">ENDEREÇO</th>
-            <th scope="col">TELEFONE</th>
-            <th scope="col" class="hide-sm">E-MAIL</th>
-            <th scope="col"><span class="visually-hidden">Ações</span></th>
-          </tr>
-        </thead>
-        <tbody id="tabela-registros"></tbody>
-      </table>
-    </div>
-    <div class="page-actions">
-      <button type="button" class="btn-app" id="btn-novo">CADASTRAR NOVA UNIDADE</button>
-    </div>
-
-    <div class="modal fade" id="modal-registro" tabindex="-1" aria-labelledby="modal-registro-titulo" aria-hidden="true">
-      <div class="modal-dialog">
-        <form class="modal-content" id="form-registro" novalidate>
-          <div class="modal-header">
-            <h2 class="modal-title fs-5" id="modal-registro-titulo"></h2>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <label for="unidade-nome" class="form-label">Unidade</label>
-            <input type="text" class="form-control" id="unidade-nome" name="nome" maxlength="60" required>
-            <label for="unidade-endereco" class="form-label">Endereço</label>
-            <input type="text" class="form-control" id="unidade-endereco" name="endereco" maxlength="200" required>
-            <label for="unidade-telefone" class="form-label">Telefone</label>
-            <input type="tel" class="form-control" id="unidade-telefone" name="telefone" placeholder="(31)99999-9999" required>
-            <label for="unidade-email" class="form-label">E-mail</label>
-            <input type="email" class="form-control" id="unidade-email" name="email" required>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn-app" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-app">Salvar</button>
-          </div>
-        </form>
+  <main id="conteudo" class="app-main">
+    <div class="container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Unidades</h1>
+          <p class="page-lead">Endereços e contatos das unidades da barbearia.</p>
+        </div>
+        <button type="button" class="btn-app" id="btn-novo">Nova unidade</button>
       </div>
+      <section class="panel" aria-label="Resultados">
+        <div class="table-wrapper">
+          <table class="table table-hover table-app">
+            <thead>
+              <tr>
+                <th scope="col">Unidade</th>
+                <th scope="col" class="hide-sm">Endereço</th>
+                <th scope="col">Telefone</th>
+                <th scope="col" class="hide-sm">E-mail</th>
+                <th scope="col"><span class="visually-hidden">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="tabela-registros"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
+
+  <div class="modal fade" id="modal-registro" tabindex="-1" aria-labelledby="modal-registro-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content" id="form-registro" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-registro-titulo"></h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <label for="unidade-nome" class="form-label">Nome da unidade</label>
+          <input type="text" class="form-control mb-3" id="unidade-nome" name="nome" maxlength="60" required>
+          <label for="unidade-endereco" class="form-label">Endereço</label>
+          <input type="text" class="form-control mb-3" id="unidade-endereco" name="endereco" maxlength="200" required>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="unidade-telefone" class="form-label">Telefone</label>
+              <input type="tel" class="form-control" id="unidade-telefone" name="telefone" placeholder="(31)99999-9999" required>
+            </div>
+            <div class="col-md-6">
+              <label for="unidade-email" class="form-label">E-mail</label>
+              <input type="email" class="form-control" id="unidade-email" name="email" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-app">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="app-footer"></div>
 </body>

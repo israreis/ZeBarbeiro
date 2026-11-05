@@ -4,10 +4,10 @@ import {
   byId, el, renderLoading, renderRows, withBusy,
 } from '../core/dom.js';
 import { isFormValid, value } from '../core/forms.js';
-import {
-  STATUS, formatCurrency, formatDate, todayIso,
-} from '../core/format.js';
+import { STATUS, formatCurrency, todayIso } from '../core/format.js';
 import { notify, notifyError, notifySuccess } from '../core/notify.js';
+import { statusBadge } from '../components/status-badge.js';
+import { bindSlotSelection } from '../components/slot-selection.js';
 
 const CONCLUIVEIS = [STATUS.AGENDADO, STATUS.AGENDADO_BARBEIRO];
 const CANCELAVEIS = [STATUS.BLOQUEADO, STATUS.AGENDADO_BARBEIRO];
@@ -25,14 +25,8 @@ if (await initAppShell('barbeiro')) {
   let agenda = null;
 
   const columns = [
-    { render: () => formatDate(agenda.data) },
-    { render: (h) => h.agendamento?.cliente ?? '' },
-    { className: 'hide-sm', render: (h) => h.agendamento?.servico?.nome ?? '' },
-    { className: 'hide-sm', render: (h) => formatCurrency(h.agendamento?.servico?.valor) },
-    { render: (h) => h.horario },
-    { render: (h) => h.agendamento?.status ?? (h.passado ? '—' : 'Livre') },
     {
-      className: 'col-acoes',
+      className: 'col-select',
       render: (h) => el('input', {
         type: 'checkbox',
         className: 'form-check-input slot-checkbox',
@@ -41,7 +35,13 @@ if (await initAppShell('barbeiro')) {
         attrs: { 'aria-label': `Selecionar ${h.horario}` },
       }),
     },
+    { className: 'col-horario', render: (h) => h.horario },
+    { render: (h) => h.agendamento?.cliente ?? '' },
+    { className: 'hide-sm', render: (h) => h.agendamento?.servico?.nome ?? '' },
+    { className: 'hide-sm', render: (h) => formatCurrency(h.agendamento?.servico?.valor) },
+    { render: (h) => statusBadge(h.agendamento?.status ?? (h.passado ? 'Encerrado' : 'Livre')) },
   ];
+  const selection = bindSlotSelection(tbody, document.querySelector('[data-selection-count]'));
 
   form.elements.data.value = todayIso();
 
@@ -58,6 +58,7 @@ if (await initAppShell('barbeiro')) {
       renderRows(tbody, [], columns, { emptyMessage: 'Não foi possível carregar a agenda.' });
       notifyError(error);
     }
+    selection.refresh();
   }
 
   function selectedSlots() {
@@ -73,7 +74,7 @@ if (await initAppShell('barbeiro')) {
   async function runAction({ accepts, execute, success, invalidMessage }) {
     const selecionados = selectedSlots();
     if (!selecionados.length) {
-      notify('Selecione pelo menos um horário.', 'error');
+      notify('Marque pelo menos um horário na tabela.', 'error');
       return;
     }
     const validos = selecionados.filter(accepts);
@@ -86,7 +87,7 @@ if (await initAppShell('barbeiro')) {
     try {
       await execute(validos);
       notifySuccess(success);
-      if (ignorados.length) notify(`Horários ignorados: ${ignorados.join(', ')}. ${invalidMessage}`, 'info');
+      if (ignorados.length) notify(`Ignorados: ${ignorados.join(', ')}. ${invalidMessage}`, 'info');
     } catch (error) {
       notifyError(error);
     }
@@ -110,19 +111,19 @@ if (await initAppShell('barbeiro')) {
   }
 
   const actions = {
-    'btn-incluir': () => reserve(STATUS.AGENDADO_BARBEIRO, 'Atendimento(s) incluído(s) com sucesso!'),
-    'btn-bloquear': () => reserve(STATUS.BLOQUEADO, 'Horário(s) bloqueado(s) com sucesso!'),
+    'btn-incluir': () => reserve(STATUS.AGENDADO_BARBEIRO, 'Atendimento incluído na agenda.'),
+    'btn-bloquear': () => reserve(STATUS.BLOQUEADO, 'Horário bloqueado.'),
     'btn-concluir': () => runAction({
       accepts: (slot) => CONCLUIVEIS.includes(slot.agendamento?.status),
       execute: (slots) => patchEach(slots, 'concluir'),
-      success: 'Atendimento(s) concluído(s) com sucesso!',
+      success: 'Atendimento concluído.',
       invalidMessage: 'Apenas atendimentos agendados podem ser concluídos.',
     }),
     'btn-cancelar': () => runAction({
       accepts: (slot) => CANCELAVEIS.includes(slot.agendamento?.status),
       execute: (slots) => patchEach(slots, 'cancelar'),
-      success: 'Cancelamento(s) realizado(s) com sucesso!',
-      invalidMessage: 'Apenas bloqueios e atendimentos incluídos por você podem ser cancelados.',
+      success: 'Bloqueio ou atendimento desfeito.',
+      invalidMessage: 'Só é possível desfazer bloqueios e atendimentos incluídos por você.',
     }),
   };
   for (const [id, action] of Object.entries(actions)) {

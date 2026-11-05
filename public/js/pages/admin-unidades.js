@@ -8,13 +8,13 @@ if (await initAppShell('administrador')) {
 
   await initCrudPage({
     resource: '/unidades',
-    titles: { create: 'CADASTRAR UNIDADE', edit: 'EDITAR UNIDADE' },
-    messages: { created: 'Unidade cadastrada com sucesso!', updated: 'Unidade atualizada com sucesso!' },
+    titles: { create: 'Nova unidade', edit: 'Editar unidade' },
+    messages: { created: 'Unidade cadastrada.', updated: 'Unidade atualizada.' },
     columns: [
       { render: (u) => u.nome },
-      { className: 'hide-sm', render: (u) => u.endereco },
+      { className: 'hide-sm table-muted', render: (u) => u.endereco },
       { render: (u) => u.telefone },
-      { className: 'hide-sm', render: (u) => u.email },
+      { className: 'hide-sm table-muted', render: (u) => u.email },
     ],
     fillForm(form, unidade) {
       for (const field of ['nome', 'endereco', 'telefone', 'email']) {

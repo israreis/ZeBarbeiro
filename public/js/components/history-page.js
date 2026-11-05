@@ -5,15 +5,16 @@ import {
 import { isFormValid, value } from '../core/forms.js';
 import { currentMonthRange, formatCurrency, formatDate } from '../core/format.js';
 import { notifyError } from '../core/notify.js';
+import { statusBadge } from './status-badge.js';
 
 const COLUMN_DEFINITIONS = Object.freeze({
   data: { className: 'col-data', render: (ag) => formatDate(ag.data) },
   cliente: { className: 'col-cliente', render: (ag) => ag.cliente ?? '—' },
   barbeiro: { className: 'col-barbeiro', render: (ag) => ag.barbeiro ?? '—' },
-  servico: { className: 'col-servico hide-sm', render: (ag) => ag.servico?.nome ?? '—' },
+  servico: { className: 'col-servico hide-sm', render: (ag) => ag.servico?.nome ?? '' },
   valor: { className: 'col-valor hide-sm', render: (ag) => formatCurrency(ag.servico?.valor) },
   horario: { className: 'col-horario', render: (ag) => ag.horarioInicio },
-  status: { className: 'col-status', render: (ag) => ag.status },
+  status: { className: 'col-status', render: (ag) => statusBadge(ag.status) },
 });
 
 /**
@@ -52,7 +53,9 @@ export async function initHistoryPage({ columns, barberFilter = false }) {
         situacao: form.elements.situacao.value,
         barbeiroId: barberFilter ? value(form, 'barbeiroId') : undefined,
       });
-      renderRows(tbody, agendamentos, columnDefs, { emptyMessage: 'Nenhum atendimento encontrado no período.' });
+      renderRows(tbody, agendamentos, columnDefs, {
+        emptyMessage: 'Nenhum atendimento nesse período. Ajuste as datas ou a situação.',
+      });
     } catch (error) {
       renderRows(tbody, [], columnDefs, { emptyMessage: 'Não foi possível carregar os atendimentos.' });
       notifyError(error);

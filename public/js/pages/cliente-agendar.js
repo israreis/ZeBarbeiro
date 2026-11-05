@@ -4,10 +4,10 @@ import {
   byId, el, renderLoading, renderRows, setOptions, withBusy,
 } from '../core/dom.js';
 import { isFormValid, value } from '../core/forms.js';
-import {
-  STATUS, formatCurrency, formatDate, todayIso,
-} from '../core/format.js';
+import { STATUS, formatCurrency, todayIso } from '../core/format.js';
 import { notify, notifyError, notifySuccess } from '../core/notify.js';
+import { statusBadge } from '../components/status-badge.js';
+import { bindSlotSelection } from '../components/slot-selection.js';
 
 const canBook = (slot) => !slot.agendamento && !slot.passado;
 const canCancel = (slot) => slot.agendamento?.status === STATUS.AGENDADO && !slot.passado;
@@ -21,14 +21,8 @@ if (await initAppShell('cliente')) {
   let agenda = null;
 
   const columns = [
-    { render: () => formatDate(agenda.data) },
-    { render: (h) => h.agendamento?.barbeiro ?? '' },
-    { className: 'hide-sm', render: (h) => h.agendamento?.servico?.nome ?? '' },
-    { className: 'hide-sm', render: (h) => formatCurrency(h.agendamento?.servico?.valor) },
-    { render: (h) => h.horario },
-    { render: (h) => h.agendamento?.status ?? (h.passado ? 'Encerrado' : 'Disponível') },
     {
-      className: 'col-acoes',
+      className: 'col-select',
       render: (h) => el('input', {
         type: 'checkbox',
         className: 'form-check-input slot-checkbox',
@@ -37,7 +31,17 @@ if (await initAppShell('cliente')) {
         attrs: { 'aria-label': `Selecionar ${h.horario}` },
       }),
     },
+    { className: 'col-horario', render: (h) => h.horario },
+    { render: (h) => h.agendamento?.barbeiro ?? '' },
+    { className: 'hide-sm', render: (h) => h.agendamento?.servico?.nome ?? '' },
+    { className: 'hide-sm', render: (h) => formatCurrency(h.agendamento?.servico?.valor) },
+    { render: (h) => statusBadge(h.agendamento?.status ?? (h.passado ? 'Encerrado' : 'Livre')) },
   ];
+  const selection = bindSlotSelection(tbody, document.querySelector('[data-selection-count]'));
+  const showHint = (message) => {
+    renderRows(tbody, [], columns, { emptyMessage: message });
+    selection.refresh();
+  };
 
   form.elements.data.min = todayIso();
   form.elements.data.value = todayIso();
@@ -45,8 +49,8 @@ if (await initAppShell('cliente')) {
   function updateServicos() {
     const barbeiro = barbeiros.find((b) => b.id === barbeiroSelect.value);
     setOptions(servicoSelect, barbeiro?.servicos ?? [], {
-      placeholder: 'Selecione um serviço',
-      label: (s) => `${s.nome} — ${formatCurrency(s.valor)}`,
+      placeholder: 'Escolha o serviço',
+      label: (s) => `${s.nome} (${formatCurrency(s.valor)})`,
     });
   }
 
@@ -63,6 +67,7 @@ if (await initAppShell('cliente')) {
       renderRows(tbody, [], columns, { emptyMessage: 'Não foi possível carregar os horários.' });
       notifyError(error);
     }
+    selection.refresh();
   }
 
   function selectedSlots() {
@@ -74,11 +79,11 @@ if (await initAppShell('cliente')) {
   async function book() {
     const slots = selectedSlots().filter(canBook);
     if (!slots.length) {
-      notify('Selecione pelo menos um horário disponível.', 'error');
+      notify('Marque pelo menos um horário livre na tabela.', 'error');
       return;
     }
     if (!value(form, 'servicoId')) {
-      notify('Selecione um serviço.', 'error');
+      notify('Escolha o serviço antes de agendar.', 'error');
       servicoSelect.focus();
       return;
     }
@@ -89,7 +94,7 @@ if (await initAppShell('cliente')) {
         data: agenda.data,
         horarios: slots.map((s) => s.horario),
       });
-      notifySuccess('Agendamento realizado com sucesso!');
+      notifySuccess(slots.length === 1 ? 'Horário agendado.' : `${slots.length} horários agendados.`);
     } catch (error) {
       notifyError(error);
     }
@@ -99,7 +104,7 @@ if (await initAppShell('cliente')) {
   async function cancel() {
     const slots = selectedSlots().filter(canCancel);
     if (!slots.length) {
-      notify('Selecione pelo menos um agendamento seu para cancelar.', 'error');
+      notify('Marque pelo menos um agendamento seu para cancelar.', 'error');
       return;
     }
     if (!window.confirm(`Cancelar ${slots.length} agendamento(s)?`)) return;
@@ -109,22 +114,23 @@ if (await initAppShell('cliente')) {
     );
     const failure = results.find((result) => result.status === 'rejected');
     if (failure) notifyError(failure.reason);
-    else notifySuccess('Agendamento(s) cancelado(s) com sucesso!');
+    else notifySuccess('Agendamento cancelado.');
     await load();
   }
 
   try {
     barbeiros = await api.get('/barbeiros');
-    setOptions(barbeiroSelect, barbeiros, { placeholder: 'Selecione um barbeiro' });
+    setOptions(barbeiroSelect, barbeiros, { placeholder: 'Escolha o barbeiro' });
     updateServicos();
   } catch (error) {
     notifyError(error);
   }
+  showHint('Escolha o barbeiro e a data para ver os horários livres.');
 
   barbeiroSelect.addEventListener('change', () => {
     updateServicos();
     agenda = null;
-    renderRows(tbody, [], columns, { emptyMessage: 'Clique em "Buscar" para ver os horários.' });
+    showHint('Clique em "Ver horários" para ver a agenda do barbeiro.');
   });
   form.addEventListener('submit', (event) => {
     event.preventDefault();

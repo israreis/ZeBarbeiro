@@ -1,18 +1,52 @@
 /* ==========================================================================
-   Base compartilhada por todas as páginas: tokens, cabeçalho, rodapé,
-   botões, modais e notificações.
+   Zé Barbeiro — sistema visual
+   Paleta tirada da própria barbearia: madeira escura, couro e latão.
    ========================================================================== */
 
 :root {
-  --color-gold: #c79655;
-  --color-brown: #7a4d2c;
-  --color-peach: #fcd1a7;
-  --color-dark-brown: #301f18;
-  --color-black: #000;
-  --color-white: #fff;
-  --color-footer: #212529;
-  --font-family: Arial, Helvetica, sans-serif;
-  --radius-pill: 25px;
+  /* Cores */
+  --espresso: #1b130e;        /* fundo principal */
+  --walnut: #251a13;          /* superfícies */
+  --leather: #34251b;         /* superfícies elevadas, bordas fortes */
+  --seam: #4a3628;            /* bordas e divisores */
+  --brass: #c9a063;           /* destaque (logo, ações) */
+  --brass-bright: #dcb67c;
+  --brass-deep: #9c7944;
+  --ivory: #f3e9dc;           /* texto principal */
+  --sand: #bfae9a;            /* texto secundário */
+  --sage: #93b38e;            /* sucesso / concluído */
+  --brick: #d0806f;           /* erro / cancelado */
+  --slate: #9aa7b5;           /* bloqueado */
+
+  /* Tipografia */
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Forma e movimento */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-lift: 0 18px 40px -18px rgba(0, 0, 0, 0.75);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration: 220ms;
+
+  /* Integração com o tema escuro do Bootstrap */
+  --bs-body-bg: var(--espresso);
+  --bs-body-color: var(--ivory);
+  --bs-body-font-family: var(--font-body);
+  --bs-secondary-color: var(--sand);
+  --bs-border-color: var(--seam);
+  --bs-link-color: var(--brass-bright);
+  --bs-link-color-rgb: 220, 182, 124;
+  --bs-link-hover-color: var(--ivory);
+  --bs-link-hover-color-rgb: 243, 233, 220;
+  --bs-heading-color: var(--ivory);
+  --bs-tertiary-bg: var(--walnut);
+  --bs-secondary-bg: var(--leather);
+  --bs-focus-ring-color: rgba(201, 160, 99, 0.35);
+  --bs-form-valid-color: var(--sage);
+  --bs-form-invalid-color: var(--brick);
+  --bs-form-invalid-border-color: var(--brick);
 }
 
 *,
@@ -21,212 +55,477 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: var(--font-family);
-  background-color: var(--color-black);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--espresso);
+  color: var(--ivory);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+body > main {
+  flex: 1 0 auto;
 }
 
 h1,
 h2,
-h3,
-h4,
-h5,
-h6 {
-  color: inherit;
-  font-weight: bold;
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--ivory);
+}
+
+a {
+  color: var(--brass-bright);
+  text-underline-offset: 3px;
+}
+
+::selection {
+  background: var(--brass);
+  color: var(--espresso);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass-bright);
+  outline-offset: 2px;
 }
 
 /* ---------- Cabeçalho ---------- */
 
 .app-header {
-  padding: 1.5rem;
-  background: url('../img/capa-barbearia.jpg') center / cover no-repeat;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  background: rgba(27, 19, 14, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--seam);
 }
 
-.app-logo {
-  max-width: 100px;
-  max-height: 100px;
+.app-header .navbar {
+  padding: 0.6rem 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ivory);
+  text-decoration: none;
+}
+
+.brand img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.app-header .nav-link {
+  position: relative;
+  padding: 0.5rem 0.9rem;
+  color: var(--sand);
+  font-weight: 500;
+  transition: color var(--duration) var(--ease-out);
+}
+
+.app-header .nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0.9rem;
+  right: 0.9rem;
+  bottom: 0.2rem;
+  height: 2px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration) var(--ease-out);
+}
+
+.app-header .nav-link:hover,
+.app-header .nav-link.active {
+  color: var(--ivory);
+}
+
+.app-header .nav-link:hover::after,
+.app-header .nav-link.active::after {
+  transform: scaleX(1);
 }
 
 .navbar-toggler {
-  background-color: var(--color-gold);
+  border-color: var(--seam);
 }
 
-.navbar-nav .nav-link {
-  color: var(--color-white);
-  font-size: 1.3rem;
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 3px var(--bs-focus-ring-color);
 }
 
-.navbar-nav .nav-link:hover,
-.navbar-nav .nav-link:focus-visible,
-.navbar-nav .nav-link.active {
-  color: var(--color-gold);
+/* Menu da conta */
+.account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.9rem;
+  border: 1px solid var(--seam);
+  border-radius: 999px;
+  background: var(--walnut);
+  color: var(--ivory);
+  transition: border-color var(--duration) var(--ease-out);
 }
 
-.app-greeting {
-  margin: 0 0.75rem;
-  color: var(--color-peach);
-  font-size: 1rem;
+.account-trigger:hover,
+.account-trigger[aria-expanded='true'] {
+  border-color: var(--brass);
 }
 
-.btn-account {
-  background-color: var(--color-gold);
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brass);
+  color: var(--espresso);
+  font-family: var(--font-display);
+  font-weight: 700;
 }
 
-.btn-account img {
-  width: 20px;
+.dropdown-menu {
+  --bs-dropdown-bg: var(--walnut);
+  --bs-dropdown-border-color: var(--seam);
+  --bs-dropdown-link-color: var(--ivory);
+  --bs-dropdown-link-hover-bg: var(--leather);
+  --bs-dropdown-link-hover-color: var(--ivory);
+  --bs-dropdown-link-active-bg: var(--brass);
+  --bs-dropdown-link-active-color: var(--espresso);
+  --bs-dropdown-header-color: var(--sand);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+  padding: 0.4rem;
 }
 
-.divider-gold {
-  margin: 0.5rem 0;
-  border-top: 2px solid var(--color-gold);
+.dropdown-menu.show {
+  animation: pop-in 180ms var(--ease-out);
+}
+
+.dropdown-item {
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
 }
 
 /* ---------- Botões ---------- */
 
+.btn-app,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    color var(--duration) var(--ease-out),
+    transform 120ms var(--ease-out);
+}
+
 .btn-app {
-  padding: 0.5rem 1.25rem;
-  margin: 0.5rem;
-  border: none;
-  border-radius: var(--radius-pill);
-  background-color: var(--color-gold);
-  color: var(--color-brown);
-  font-weight: bold;
+  border: 1px solid var(--brass);
+  background: var(--brass);
+  color: var(--espresso);
 }
 
-.btn-app:hover:not(:disabled),
-.btn-app:focus-visible {
-  filter: brightness(1.08);
+.btn-app:hover:not(:disabled) {
+  background: var(--brass-bright);
+  border-color: var(--brass-bright);
+  color: var(--espresso);
 }
 
-.btn-app:disabled {
-  opacity: 0.6;
+.btn-ghost {
+  border: 1px solid var(--seam);
+  background: transparent;
+  color: var(--ivory);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--brass);
+  color: var(--brass-bright);
+}
+
+.btn-app:active:not(:disabled),
+.btn-ghost:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-app:disabled,
+.btn-ghost:disabled {
+  opacity: 0.55;
   cursor: progress;
+}
+
+/* ---------- Formulários (tema) ---------- */
+
+.form-control,
+.form-select {
+  --bs-border-color: var(--seam);
+  background-color: var(--espresso);
+  border-color: var(--seam);
+  border-radius: var(--radius-sm);
+  color: var(--ivory);
+  transition: border-color var(--duration) var(--ease-out), box-shadow var(--duration) var(--ease-out);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--espresso);
+  border-color: var(--brass);
+  color: var(--ivory);
+  box-shadow: 0 0 0 3px var(--bs-focus-ring-color);
+}
+
+.form-control::placeholder {
+  color: #7d6c5c;
+}
+
+.form-label {
+  margin-bottom: 0.35rem;
+  color: var(--sand);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-check-input {
+  background-color: var(--espresso);
+  border-color: var(--seam);
+}
+
+.form-check-input:checked {
+  background-color: var(--brass);
+  border-color: var(--brass);
+}
+
+.form-check-input:focus {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--bs-focus-ring-color);
+}
+
+select[multiple] option {
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+}
+
+select[multiple] option:checked {
+  background: var(--brass) linear-gradient(0deg, var(--brass), var(--brass));
+  color: var(--espresso);
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(0.4);
+  cursor: pointer;
 }
 
 /* ---------- Modais ---------- */
 
-.modal-content,
-.modal-header,
-.modal-body,
-.modal-footer {
-  background-color: var(--color-peach);
-  border-color: var(--color-white);
-  color: var(--color-brown);
-  font-weight: bold;
+.modal {
+  --bs-modal-bg: var(--walnut);
+  --bs-modal-border-color: var(--seam);
+  --bs-modal-header-border-color: var(--seam);
+  --bs-modal-footer-border-color: var(--seam);
+  --bs-modal-border-radius: var(--radius-lg);
+  --bs-modal-color: var(--ivory);
+}
+
+.modal.fade .modal-dialog {
+  transform: translateY(16px) scale(0.98);
+  transition: transform 260ms var(--ease-out);
+}
+
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+.modal-backdrop {
+  --bs-backdrop-bg: #0c0806;
+  --bs-backdrop-opacity: 0.7;
 }
 
 .modal-title {
-  width: 100%;
-  text-align: center;
-  font-weight: bold;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
 }
 
-.modal-section-title {
-  margin: 0.5rem 0 1rem;
-  font-size: 1.1rem;
-  text-align: center;
-}
-
-.modal-footer {
-  justify-content: center;
-}
-
-/* Menu da conta (pequeno, ancorado no canto superior direito). */
-.modal-account-menu {
-  position: fixed;
-  top: 140px;
-  right: 50px;
-  width: 100%;
-  max-width: 200px;
-  margin: 0;
-}
-
-.account-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem;
-  border: none;
-  background: transparent;
-  color: var(--color-brown);
-  font-weight: bold;
-  text-align: start;
-}
-
-.account-menu-item:hover,
-.account-menu-item:focus-visible {
-  text-decoration: underline;
-}
-
-.account-menu-item img {
-  width: 20px;
-}
-
-.account-details dt {
-  margin-top: 0.5rem;
-}
-
-.account-details dd {
-  margin: 0;
-  font-weight: normal;
+.btn-close {
+  filter: invert(1) sepia(0.3);
 }
 
 /* ---------- Rodapé ---------- */
 
 .app-footer {
-  padding: 3rem 1rem 1rem;
-  background-color: var(--color-footer);
+  padding: 3rem 0 1.5rem;
+  border-top: 1px solid var(--seam);
+  background: var(--walnut);
+  color: var(--sand);
+  font-size: 0.95rem;
 }
 
-.footer-title {
-  font-size: 1.25rem;
+.app-footer h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
 }
 
 .app-footer a {
-  color: var(--color-white);
+  color: var(--sand);
 }
 
-.social-icon {
-  width: 20px;
+.app-footer a:hover {
+  color: var(--brass-bright);
 }
 
-.footer-copyright {
-  margin: 1.5rem 0 0;
+.app-footer ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.app-footer li + li {
+  margin-top: 0.4rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.social-link img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.footer-bottom {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--seam);
+  font-size: 0.85rem;
 }
 
 /* ---------- Notificações ---------- */
 
 .toast-region {
   position: fixed;
-  top: 1rem;
   right: 1rem;
+  bottom: 1rem;
   z-index: 2000;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-width: min(400px, calc(100vw - 2rem));
+  gap: 0.6rem;
+  width: min(380px, calc(100vw - 2rem));
 }
 
 .toast-message {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--seam);
+  border-left: 3px solid var(--toast-accent, var(--brass));
+  border-radius: var(--radius-md);
+  background: var(--leather);
+  color: var(--ivory);
+  box-shadow: var(--shadow-lift);
+  animation: toast-in 320ms var(--ease-out);
+}
+
+.toast-message.is-leaving {
+  animation: toast-out 200ms ease-in forwards;
+}
+
+.toast-message[data-type='success'] { --toast-accent: var(--sage); }
+.toast-message[data-type='error'] { --toast-accent: var(--brick); }
+
+.toast-message p {
+  flex: 1;
   margin: 0;
+}
+
+.toast-message .btn-close {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+}
+
+/* ---------- Movimento ---------- */
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes toast-out {
+  to { opacity: 0; transform: translateX(24px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ---------- Utilitários ---------- */
 
+.visually-hidden-focusable:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 3000;
+  padding: 0.5rem 1rem;
+  background: var(--brass);
+  color: var(--espresso);
+}
+
 @media (max-width: 576px) {
   .hide-sm {
     display: none;
-  }
-
-  .modal-account-menu {
-    top: 100px;
-    right: 1rem;
   }
 }

@@ -3,7 +3,7 @@ import { initHistoryPage } from '../components/history-page.js';
 
 if (await initAppShell('administrador')) {
   await initHistoryPage({
-    columns: ['data', 'barbeiro', 'cliente', 'servico', 'valor', 'horario', 'status'],
+    columns: ['data', 'horario', 'barbeiro', 'cliente', 'servico', 'valor', 'status'],
     barberFilter: true,
   });
 }

@@ -7,6 +7,7 @@ import {
 } from '../core/forms.js';
 import { WEEKDAY_LABELS } from '../core/format.js';
 import { notifyError } from '../core/notify.js';
+import { statusBadge } from '../components/status-badge.js';
 
 const DEFAULT_SCHEDULE = { horarioInicial: '08:00', horarioFinal: '18:00' };
 
@@ -22,8 +23,8 @@ function toggleCreateOnlyFields(form, isCreate) {
 }
 
 function describeSchedule(barbeiro) {
-  const dias = barbeiro.diasDisponiveis.map((dia) => WEEKDAY_LABELS[dia].replace('-feira', '')).join(', ');
-  return `${dias} · ${barbeiro.horarioInicial}–${barbeiro.horarioFinal}`;
+  const dias = barbeiro.diasDisponiveis.map((dia) => WEEKDAY_LABELS[dia].slice(0, 3)).join(', ');
+  return `${dias}, das ${barbeiro.horarioInicial} às ${barbeiro.horarioFinal}`;
 }
 
 if (await initAppShell('administrador')) {
@@ -32,13 +33,13 @@ if (await initAppShell('administrador')) {
 
   await initCrudPage({
     resource: '/barbeiros',
-    titles: { create: 'CADASTRAR BARBEIRO', edit: 'EDITAR BARBEIRO' },
-    messages: { created: 'Barbeiro cadastrado com sucesso!', updated: 'Barbeiro atualizado com sucesso!' },
+    titles: { create: 'Novo barbeiro', edit: 'Editar barbeiro' },
+    messages: { created: 'Barbeiro cadastrado.', updated: 'Barbeiro atualizado.' },
     columns: [
       { render: (b) => b.nome },
-      { className: 'hide-sm', render: (b) => b.servicos.map((s) => s.nome).join(', ') },
-      { className: 'hide-sm', render: describeSchedule },
-      { render: (b) => (b.ativo ? 'Ativo' : 'Inativo') },
+      { className: 'hide-sm table-muted', render: (b) => b.servicos.map((s) => s.nome).join(', ') },
+      { className: 'hide-sm table-muted', render: describeSchedule },
+      { render: (b) => statusBadge(b.ativo ? 'Ativo' : 'Inativo') },
     ],
 
     async beforeLoad() {
@@ -76,7 +77,9 @@ if (await initAppShell('administrador')) {
       const servicos = target.elements.servicoIds;
       servicos.setCustomValidity(selectedValues(servicos).length ? '' : 'Selecione pelo menos um serviço.');
       const primeiroDia = target.querySelector('input[name="diasDisponiveis"]');
-      primeiroDia.setCustomValidity(checkedValues(target, 'diasDisponiveis').length ? '' : 'Selecione pelo menos um dia.');
+      primeiroDia.setCustomValidity(
+        checkedValues(target, 'diasDisponiveis').length ? '' : 'Selecione pelo menos um dia de atendimento.',
+      );
       const fim = target.elements.horarioFinal;
       fim.setCustomValidity(value(target, 'horarioFinal') > value(target, 'horarioInicial')
         ? '' : 'O horário final deve ser posterior ao inicial.');

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -19,54 +19,67 @@
 <body data-nav="servicos">
   <div id="app-header"></div>
 
-  <main>
-    <h1 class="page-title">SERVIÇOS CADASTRADOS</h1>
-    <div class="table-wrapper">
-      <table class="table table-app">
-        <thead>
-          <tr>
-            <th scope="col">SERVIÇO</th>
-            <th scope="col">VALOR</th>
-            <th scope="col" class="hide-sm">DURAÇÃO</th>
-            <th scope="col">STATUS</th>
-            <th scope="col"><span class="visually-hidden">Ações</span></th>
-          </tr>
-        </thead>
-        <tbody id="tabela-registros"></tbody>
-      </table>
-    </div>
-    <div class="page-actions">
-      <button type="button" class="btn-app" id="btn-novo">CADASTRAR NOVO SERVIÇO</button>
-    </div>
-
-    <div class="modal fade" id="modal-registro" tabindex="-1" aria-labelledby="modal-registro-titulo" aria-hidden="true">
-      <div class="modal-dialog">
-        <form class="modal-content" id="form-registro" novalidate>
-          <div class="modal-header">
-            <h2 class="modal-title fs-5" id="modal-registro-titulo"></h2>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <label for="servico-nome" class="form-label">Serviço</label>
-            <input type="text" class="form-control" id="servico-nome" name="nome" maxlength="60" required>
-            <label for="servico-valor" class="form-label">Valor (R$)</label>
-            <input type="number" class="form-control" id="servico-valor" name="valor" min="0.01" step="0.01" required>
-            <label for="servico-duracao" class="form-label">Duração (minutos)</label>
-            <input type="number" class="form-control" id="servico-duracao" name="duracaoMinutos" min="5" max="480" step="5" required>
-            <label for="campo-ativo" class="form-label">Status</label>
-            <select class="form-select" id="campo-ativo" name="ativo">
-              <option value="true">Ativo</option>
-              <option value="false">Inativo</option>
-            </select>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn-app" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-app">Salvar</button>
-          </div>
-        </form>
+  <main id="conteudo" class="app-main">
+    <div class="container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Serviços</h1>
+          <p class="page-lead">Preço e duração que os clientes veem ao agendar.</p>
+        </div>
+        <button type="button" class="btn-app" id="btn-novo">Novo serviço</button>
       </div>
+      <section class="panel" aria-label="Resultados">
+        <div class="table-wrapper">
+          <table class="table table-hover table-app">
+            <thead>
+              <tr>
+                <th scope="col">Serviço</th>
+                <th scope="col">Preço</th>
+                <th scope="col" class="hide-sm">Duração</th>
+                <th scope="col">Situação</th>
+                <th scope="col"><span class="visually-hidden">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="tabela-registros"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
+
+  <div class="modal fade" id="modal-registro" tabindex="-1" aria-labelledby="modal-registro-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content" id="form-registro" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-registro-titulo"></h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <label for="servico-nome" class="form-label">Nome do serviço</label>
+          <input type="text" class="form-control mb-3" id="servico-nome" name="nome" maxlength="60" required>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label for="servico-valor" class="form-label">Preço (R$)</label>
+              <input type="number" class="form-control" id="servico-valor" name="valor" min="0.01" step="0.01" required>
+            </div>
+            <div class="col-6">
+              <label for="servico-duracao" class="form-label">Duração (minutos)</label>
+              <input type="number" class="form-control" id="servico-duracao" name="duracaoMinutos" min="5" max="480" step="5" required>
+            </div>
+          </div>
+          <label for="campo-ativo" class="form-label">Situação</label>
+          <select class="form-select" id="campo-ativo" name="ativo">
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-app">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="app-footer"></div>
 </body>

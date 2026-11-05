@@ -46,5 +46,5 @@ export function clearSession() {
 }
 
 export function redirectToLogin() {
-  window.location.replace('index.html');
+  window.location.replace('login.html');
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -19,125 +19,143 @@
 <body data-nav="barbeiros">
   <div id="app-header"></div>
 
-  <main>
-    <h1 class="page-title">BARBEIROS CADASTRADOS</h1>
-    <div class="table-wrapper">
-      <table class="table table-app">
-        <thead>
-          <tr>
-            <th scope="col">BARBEIRO</th>
-            <th scope="col" class="hide-sm">SERVIÇOS</th>
-            <th scope="col" class="hide-sm">AGENDA</th>
-            <th scope="col">STATUS</th>
-            <th scope="col"><span class="visually-hidden">Ações</span></th>
-          </tr>
-        </thead>
-        <tbody id="tabela-registros"></tbody>
-      </table>
-    </div>
-    <div class="page-actions">
-      <button type="button" class="btn-app" id="btn-novo">CADASTRAR NOVO</button>
-    </div>
-
-    <div class="modal fade" id="modal-registro" tabindex="-1" aria-labelledby="modal-registro-titulo" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <form class="modal-content" id="form-registro" novalidate>
-          <div class="modal-header">
-            <h2 class="modal-title fs-5" id="modal-registro-titulo"></h2>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <h3 class="modal-section-title">Dados do Barbeiro</h3>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="barbeiro-nome" class="form-label">Nome</label>
-                <input type="text" class="form-control" id="barbeiro-nome" name="nome" maxlength="120" required>
-              </div>
-              <div class="col-md-6">
-                <label for="barbeiro-email" class="form-label">E-mail</label>
-                <input type="email" class="form-control" id="barbeiro-email" name="email" autocomplete="off" required>
-              </div>
-              <div class="col-md-6" data-only="create">
-                <label for="barbeiro-confirmar-email" class="form-label">Confirmar e-mail</label>
-                <input type="email" class="form-control" id="barbeiro-confirmar-email" name="confirmarEmail" autocomplete="off" required>
-              </div>
-              <div class="col-md-6">
-                <label for="barbeiro-senha" class="form-label" id="label-senha">Senha</label>
-                <input type="password" class="form-control" id="barbeiro-senha" name="senha" minlength="8" autocomplete="new-password">
-              </div>
-              <div class="col-md-6" data-only="create">
-                <label for="barbeiro-confirmar-senha" class="form-label">Confirmar senha</label>
-                <input type="password" class="form-control" id="barbeiro-confirmar-senha" name="confirmarSenha" autocomplete="new-password">
-              </div>
-              <div class="col-md-6">
-                <label for="barbeiro-telefone" class="form-label">Telefone</label>
-                <input type="tel" class="form-control" id="barbeiro-telefone" name="telefone" placeholder="(31)99999-9999" required>
-              </div>
-              <div class="col-md-6">
-                <label for="barbeiro-nascimento" class="form-label">Data de nascimento</label>
-                <input type="date" class="form-control" id="barbeiro-nascimento" name="dataNascimento">
-              </div>
-              <div class="col-md-6">
-                <label for="campo-ativo" class="form-label">Status</label>
-                <select class="form-select" id="campo-ativo" name="ativo">
-                  <option value="true">Ativo</option>
-                  <option value="false">Inativo</option>
-                </select>
-              </div>
-              <div class="col-12">
-                <label for="barbeiro-servicos" class="form-label">Serviços <small>(Ctrl/⌘ + clique para selecionar vários)</small></label>
-                <select class="form-select services-select" id="barbeiro-servicos" name="servicoIds" multiple required></select>
-              </div>
-            </div>
-            <div class="row g-3 mt-2">
-              <fieldset class="col-md-6 days-list">
-                <legend class="modal-section-title">Dias de atendimento</legend>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="domingo" id="dia-domingo">
-                  <label class="form-check-label" for="dia-domingo">Domingo</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="segunda" id="dia-segunda">
-                  <label class="form-check-label" for="dia-segunda">Segunda-feira</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="terca" id="dia-terca">
-                  <label class="form-check-label" for="dia-terca">Terça-feira</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="quarta" id="dia-quarta">
-                  <label class="form-check-label" for="dia-quarta">Quarta-feira</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="quinta" id="dia-quinta">
-                  <label class="form-check-label" for="dia-quinta">Quinta-feira</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="sexta" id="dia-sexta">
-                  <label class="form-check-label" for="dia-sexta">Sexta-feira</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="diasDisponiveis" value="sabado" id="dia-sabado">
-                  <label class="form-check-label" for="dia-sabado">Sábado</label>
-                </div>
-              </fieldset>
-              <fieldset class="col-md-6">
-                <legend class="modal-section-title">Horário de atendimento</legend>
-                <label for="barbeiro-inicio" class="form-label">Início</label>
-                <input type="time" class="form-control" id="barbeiro-inicio" name="horarioInicial" step="1800" required>
-                <label for="barbeiro-fim" class="form-label">Fim</label>
-                <input type="time" class="form-control" id="barbeiro-fim" name="horarioFinal" step="1800" required>
-              </fieldset>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn-app" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-app">Salvar</button>
-          </div>
-        </form>
+  <main id="conteudo" class="app-main">
+    <div class="container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Barbeiros</h1>
+          <p class="page-lead">Cadastre a equipe e defina os dias, horários e serviços de cada barbeiro.</p>
+        </div>
+        <button type="button" class="btn-app" id="btn-novo">Novo barbeiro</button>
       </div>
+      <section class="panel" aria-label="Resultados">
+        <div class="table-wrapper">
+          <table class="table table-hover table-app">
+            <thead>
+              <tr>
+                <th scope="col">Barbeiro</th>
+                <th scope="col" class="hide-sm">Serviços</th>
+                <th scope="col" class="hide-sm">Expediente</th>
+                <th scope="col">Situação</th>
+                <th scope="col"><span class="visually-hidden">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="tabela-registros"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
+
+  <div class="modal fade" id="modal-registro" tabindex="-1" aria-labelledby="modal-registro-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <form class="modal-content" id="form-registro" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-registro-titulo"></h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <h3 class="modal-section-title">Dados pessoais</h3>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="barbeiro-nome" class="form-label">Nome</label>
+              <input type="text" class="form-control" id="barbeiro-nome" name="nome" maxlength="120" required>
+            </div>
+            <div class="col-md-6">
+              <label for="barbeiro-telefone" class="form-label">Celular</label>
+              <input type="tel" class="form-control" id="barbeiro-telefone" name="telefone" placeholder="(31)99999-9999" required>
+            </div>
+            <div class="col-md-6">
+              <label for="barbeiro-email" class="form-label">E-mail de acesso</label>
+              <input type="email" class="form-control" id="barbeiro-email" name="email" autocomplete="off" required>
+            </div>
+            <div class="col-md-6" data-only="create">
+              <label for="barbeiro-confirmar-email" class="form-label">Confirmar e-mail</label>
+              <input type="email" class="form-control" id="barbeiro-confirmar-email" name="confirmarEmail" autocomplete="off" required>
+            </div>
+            <div class="col-md-6">
+              <label for="barbeiro-senha" class="form-label" id="label-senha">Senha</label>
+              <input type="password" class="form-control" id="barbeiro-senha" name="senha" minlength="8" autocomplete="new-password">
+            </div>
+            <div class="col-md-6" data-only="create">
+              <label for="barbeiro-confirmar-senha" class="form-label">Confirmar senha</label>
+              <input type="password" class="form-control" id="barbeiro-confirmar-senha" name="confirmarSenha" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label for="barbeiro-nascimento" class="form-label">Nascimento <span class="form-hint">(opcional)</span></label>
+              <input type="date" class="form-control" id="barbeiro-nascimento" name="dataNascimento">
+            </div>
+            <div class="col-md-6">
+              <label for="campo-ativo" class="form-label">Situação</label>
+              <select class="form-select" id="campo-ativo" name="ativo">
+                <option value="true">Ativo</option>
+                <option value="false">Inativo</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="modal-section-title mt-4">Atendimento</h3>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="barbeiro-servicos" class="form-label">Serviços que realiza</label>
+              <select class="form-select services-select" id="barbeiro-servicos" name="servicoIds" multiple required
+                aria-describedby="barbeiro-servicos-dica"></select>
+              <p class="form-hint mt-1 mb-0" id="barbeiro-servicos-dica">Segure Ctrl (ou ⌘) para selecionar vários.</p>
+            </div>
+            <div class="col-md-6">
+              <div class="row g-3">
+                <div class="col-6">
+                  <label for="barbeiro-inicio" class="form-label">Início do expediente</label>
+                  <input type="time" class="form-control" id="barbeiro-inicio" name="horarioInicial" step="1800" required>
+                </div>
+                <div class="col-6">
+                  <label for="barbeiro-fim" class="form-label">Fim do expediente</label>
+                  <input type="time" class="form-control" id="barbeiro-fim" name="horarioFinal" step="1800" required>
+                </div>
+              </div>
+              <fieldset class="mt-3">
+                <legend class="form-label">Dias de atendimento</legend>
+                <div class="days-grid">
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="segunda" id="dia-segunda">
+                    <label for="dia-segunda">Segunda</label>
+                  </div>
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="terca" id="dia-terca">
+                    <label for="dia-terca">Terça</label>
+                  </div>
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="quarta" id="dia-quarta">
+                    <label for="dia-quarta">Quarta</label>
+                  </div>
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="quinta" id="dia-quinta">
+                    <label for="dia-quinta">Quinta</label>
+                  </div>
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="sexta" id="dia-sexta">
+                    <label for="dia-sexta">Sexta</label>
+                  </div>
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="sabado" id="dia-sabado">
+                    <label for="dia-sabado">Sábado</label>
+                  </div>
+                  <div class="chip">
+                    <input type="checkbox" name="diasDisponiveis" value="domingo" id="dia-domingo">
+                    <label for="dia-domingo">Domingo</label>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-app">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="app-footer"></div>
 </body>

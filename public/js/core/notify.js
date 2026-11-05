@@ -1,7 +1,6 @@
 import { el } from './dom.js';
 
 const DURATION_MS = 5000;
-const STYLES = { success: 'alert-success', error: 'alert-danger', info: 'alert-info' };
 
 function container() {
   let region = document.getElementById('notificacoes');
@@ -12,32 +11,41 @@ function container() {
   return region;
 }
 
+function dismiss(toast) {
+  if (toast.classList.contains('is-leaving')) return;
+  toast.classList.add('is-leaving');
+  toast.addEventListener('animationend', () => toast.remove(), { once: true });
+  setTimeout(() => toast.remove(), 400); // garante a remoção mesmo sem animação
+}
+
 /**
- * Exibe uma notificação não bloqueante (substitui os `alert()` espalhados pelo código antigo).
+ * Exibe uma notificação não bloqueante.
  * @param {string} message
  * @param {'success'|'error'|'info'} [type]
  */
 export function notify(message, type = 'info') {
   const toast = el('div', {
-    className: `alert ${STYLES[type] ?? STYLES.info} toast-message shadow`,
+    className: 'toast-message',
+    dataset: { type },
     attrs: { role: type === 'error' ? 'alert' : 'status' },
-    text: message,
-  });
-  const close = el('button', {
-    type: 'button',
-    className: 'btn-close',
-    attrs: { 'aria-label': 'Fechar' },
-    on: { click: () => toast.remove() },
-  });
-  toast.append(close);
+  }, [
+    el('p', { text: message }),
+    el('button', {
+      type: 'button',
+      className: 'btn-close',
+      attrs: { 'aria-label': 'Fechar notificação' },
+      on: { click: () => dismiss(toast) },
+    }),
+  ]);
   container().append(toast);
-  setTimeout(() => toast.remove(), DURATION_MS);
+  setTimeout(() => dismiss(toast), DURATION_MS);
 }
 
 export const notifySuccess = (message) => notify(message, 'success');
 
 /** Exibe a mensagem de um erro (da API ou inesperado). */
 export function notifyError(error) {
-  if (!(error?.name === 'ApiError')) console.error(error);
-  notify(error?.name === 'ApiError' ? error.message : 'Ocorreu um erro inesperado. Tente novamente.', 'error');
+  const isApiError = error?.name === 'ApiError';
+  if (!isApiError) console.error(error);
+  notify(isApiError ? error.message : 'Ocorreu um erro inesperado. Tente novamente.', 'error');
 }

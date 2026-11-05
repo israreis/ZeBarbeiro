@@ -9,71 +9,63 @@ import {
 /** Itens de menu por perfil. `key` é comparado com o atributo data-nav da página. */
 const NAV_ITEMS = Object.freeze({
   administrador: [
-    { key: 'barbeiros', label: 'BARBEIROS', href: 'admin-barbeiros.html' },
-    { key: 'unidades', label: 'UNIDADES', href: 'admin-unidades.html' },
-    { key: 'servicos', label: 'SERVIÇOS', href: 'admin-servicos.html' },
-    { key: 'atendimentos', label: 'ATENDIMENTOS', href: 'admin-agenda.html' },
+    { key: 'barbeiros', label: 'Barbeiros', href: 'admin-barbeiros.html' },
+    { key: 'servicos', label: 'Serviços', href: 'admin-servicos.html' },
+    { key: 'unidades', label: 'Unidades', href: 'admin-unidades.html' },
+    { key: 'atendimentos', label: 'Atendimentos', href: 'admin-agenda.html' },
   ],
   barbeiro: [
-    { key: 'agenda', label: 'MINHA AGENDA', href: 'barbeiro-agenda.html' },
-    { key: 'historico', label: 'ATENDIMENTOS REALIZADOS', href: 'barbeiro-historico.html' },
+    { key: 'agenda', label: 'Minha agenda', href: 'barbeiro-agenda.html' },
+    { key: 'historico', label: 'Histórico', href: 'barbeiro-historico.html' },
   ],
   cliente: [
-    { key: 'agendar', label: 'AGENDAR', href: 'cliente-agendar.html' },
-    { key: 'atendimentos', label: 'MEUS ATENDIMENTOS', href: 'cliente-atendimentos.html' },
+    { key: 'agendar', label: 'Agendar', href: 'cliente-agendar.html' },
+    { key: 'atendimentos', label: 'Meus atendimentos', href: 'cliente-atendimentos.html' },
   ],
 });
 
+const ROLE_LABELS = Object.freeze({ administrador: 'Administrador', barbeiro: 'Barbeiro', cliente: 'Cliente' });
+
 /* Marcação estática (sem dados do usuário), por isso pode ser montada via template. */
 const HEADER_TEMPLATE = `
-  <header class="app-header container-fluid text-light">
+  <a class="visually-hidden-focusable" href="#conteudo">Pular para o conteúdo</a>
+  <header class="app-header">
     <nav class="navbar navbar-expand-lg" aria-label="Menu principal">
-      <div class="container-fluid">
-        <a class="navbar-brand" data-home-link><img class="app-logo" src="img/logo.png" alt="Zé Barbeiro"></a>
+      <div class="container">
+        <a class="brand" data-home-link>
+          <img src="img/logo.png" alt="">
+          <span class="brand-name">Zé Barbeiro</span>
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
           aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse justify-content-end" id="menu-principal">
+        <div class="collapse navbar-collapse justify-content-end gap-3" id="menu-principal">
           <div class="navbar-nav" data-nav-links></div>
-          <span class="app-greeting" data-greeting></span>
-          <button type="button" class="btn btn-account rounded-pill px-3" data-bs-toggle="modal"
-            data-bs-target="#menuContaModal" aria-label="Menu da conta">
-            <img src="img/icone-usuario.png" alt="">
-          </button>
+          <div class="dropdown">
+            <button type="button" class="account-trigger" data-bs-toggle="dropdown" aria-expanded="false">
+              <span data-user-first-name></span>
+              <span class="account-avatar" data-user-initial aria-hidden="true"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><h2 class="dropdown-header" data-user-role></h2></li>
+              <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#minhaContaModal">Minha conta</button></li>
+              <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">Alterar senha</button></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><button type="button" class="dropdown-item" data-logout>Sair</button></li>
+            </ul>
+          </div>
         </div>
       </div>
     </nav>
-    <div class="divider-gold"></div>
   </header>`;
 
 const ACCOUNT_MODALS_TEMPLATE = `
-  <div class="modal fade" id="menuContaModal" tabindex="-1" aria-label="Menu da conta" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-account-menu">
-      <div class="modal-content">
-        <div class="modal-header border-0 p-1">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body account-menu p-1">
-          <button type="button" class="account-menu-item" data-bs-toggle="modal" data-bs-target="#minhaContaModal">
-            <img src="img/icone-usuario.png" alt="">Minha conta
-          </button>
-          <button type="button" class="account-menu-item" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">
-            <img src="img/icone-cadeado.png" alt="">Alterar senha
-          </button>
-          <button type="button" class="account-menu-item" data-logout>
-            <img src="img/icone-sair.png" alt="">Sair
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="modal fade" id="minhaContaModal" tabindex="-1" aria-labelledby="minhaContaTitulo" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 class="modal-title fs-5" id="minhaContaTitulo">Minha Conta</h2>
+          <h2 class="modal-title" id="minhaContaTitulo">Minha conta</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
@@ -84,17 +76,17 @@ const ACCOUNT_MODALS_TEMPLATE = `
           </dl>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-app" data-bs-dismiss="modal">Fechar</button>
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Fechar</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="modal fade" id="alterarSenhaModal" tabindex="-1" aria-labelledby="alterarSenhaTitulo" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" id="formAlterarSenha" novalidate>
         <div class="modal-header">
-          <h2 class="modal-title fs-5" id="alterarSenhaTitulo">Alterar Senha</h2>
+          <h2 class="modal-title" id="alterarSenhaTitulo">Alterar senha</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
@@ -102,47 +94,49 @@ const ACCOUNT_MODALS_TEMPLATE = `
           <input type="password" class="form-control mb-3" id="senhaAtual" name="senhaAtual"
             autocomplete="current-password" required>
           <label for="novaSenha" class="form-label">Nova senha</label>
-          <input type="password" class="form-control mb-3" id="novaSenha" name="novaSenha"
-            autocomplete="new-password" minlength="8" required>
+          <input type="password" class="form-control" id="novaSenha" name="novaSenha"
+            autocomplete="new-password" minlength="8" required aria-describedby="novaSenhaDica">
+          <p class="form-hint mt-1 mb-3" id="novaSenhaDica">Mínimo de 8 caracteres.</p>
           <label for="confirmarNovaSenha" class="form-label">Confirmar nova senha</label>
           <input type="password" class="form-control" id="confirmarNovaSenha" name="confirmarNovaSenha"
             autocomplete="new-password" required>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-app" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancelar</button>
           <button type="submit" class="btn-app">Alterar senha</button>
         </div>
       </form>
     </div>
   </div>`;
 
-const FOOTER_TEMPLATE = `
-  <footer class="app-footer text-light text-center">
-    <div class="row justify-content-between m-0">
-      <div class="col-12 col-md-4 mb-3">
-        <h2 class="footer-title">ENDEREÇO</h2>
-        <p>Av. Aggeo Pio Sobrinho, 577, Buritis, Belo Horizonte - MG</p>
+export const FOOTER_TEMPLATE = `
+  <footer class="app-footer">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-12 col-md-4">
+          <h2>Endereço</h2>
+          <p class="mb-0">Av. Aggeo Pio Sobrinho, 577<br>Buritis, Belo Horizonte - MG</p>
+        </div>
+        <div class="col-12 col-md-4">
+          <h2>Contato</h2>
+          <ul>
+            <li><a href="mailto:barberapp@gmail.com">barberapp@gmail.com</a></li>
+            <li><a href="tel:+5531912345678">(31) 91234-5678</a></li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-4">
+          <h2>Redes sociais</h2>
+          <ul>
+            <li class="social-link"><img src="img/icone-instagram.png" alt="Instagram"> @agenda_barber</li>
+            <li class="social-link"><img src="img/icone-facebook.png" alt="Facebook"> @agenda_barber</li>
+          </ul>
+        </div>
       </div>
-      <div class="col-12 col-md-4 mb-3" id="contatos">
-        <h2 class="footer-title">CONTATO</h2>
-        <ul class="list-unstyled">
-          <li class="mb-2"><a href="mailto:barberapp@gmail.com">barberapp@gmail.com</a> · (31) 91234-5678</li>
-          <li class="mb-2"><a href="mailto:contato.barberapp@gmail.com">contato.barberapp@gmail.com</a> · (31) 98765-4321</li>
-        </ul>
-      </div>
-      <div class="col-12 col-md-4 mb-3">
-        <h2 class="footer-title">REDES SOCIAIS</h2>
-        <ul class="list-unstyled">
-          <li class="mb-2"><img class="social-icon" src="img/icone-instagram.png" alt="Instagram"> @agenda_barber</li>
-          <li class="mb-2"><img class="social-icon" src="img/icone-facebook.png" alt="Facebook"> @agenda_barber</li>
-        </ul>
-      </div>
+      <p class="footer-bottom mb-0">© ${new Date().getFullYear()} Zé Barbeiro. Todos os direitos reservados.</p>
     </div>
-    <div class="divider-gold"></div>
-    <p class="footer-copyright">© ${new Date().getFullYear()} Zé Barbeiro. Todos os direitos reservados.</p>
   </footer>`;
 
-function fromTemplate(html) {
+export function fromTemplate(html) {
   const template = document.createElement('template');
   template.innerHTML = html.trim();
   return template.content;
@@ -150,17 +144,19 @@ function fromTemplate(html) {
 
 function renderHeader(usuario, activeKey) {
   const fragment = fromTemplate(HEADER_TEMPLATE);
-  const home = HOME_BY_ROLE[usuario.perfil];
-  fragment.querySelector('[data-home-link]').href = home;
-  fragment.querySelector('[data-greeting]').textContent = `Olá, ${usuario.nome.split(' ')[0]}!`;
+  fragment.querySelector('[data-home-link]').href = HOME_BY_ROLE[usuario.perfil];
 
-  const links = [{ key: 'inicio', label: 'INÍCIO', href: home }, ...NAV_ITEMS[usuario.perfil]]
-    .map((item) => el('a', {
-      className: `nav-link${item.key === activeKey ? ' active' : ''}`,
-      href: item.href,
-      text: item.label,
-      attrs: item.key === activeKey ? { 'aria-current': 'page' } : {},
-    }));
+  const firstName = usuario.nome.trim().split(/\s+/)[0];
+  fragment.querySelector('[data-user-first-name]').textContent = firstName;
+  fragment.querySelector('[data-user-initial]').textContent = firstName.charAt(0).toUpperCase();
+  fragment.querySelector('[data-user-role]').textContent = ROLE_LABELS[usuario.perfil];
+
+  const links = NAV_ITEMS[usuario.perfil].map((item) => el('a', {
+    className: `nav-link${item.key === activeKey ? ' active' : ''}`,
+    href: item.href,
+    text: item.label,
+    attrs: item.key === activeKey ? { 'aria-current': 'page' } : {},
+  }));
   fragment.querySelector('[data-nav-links]').append(...links);
   return fragment;
 }
@@ -195,7 +191,7 @@ function bindAccountModals(usuario) {
         });
         form.reset();
         modal.hide(byId('alterarSenhaModal'));
-        notifySuccess('Senha alterada com sucesso!');
+        notifySuccess('Senha alterada.');
       } catch (error) {
         notifyError(error);
       }
@@ -209,7 +205,7 @@ function bindAccountModals(usuario) {
       /* mesmo com erro de rede, a sessão local é encerrada */
     }
     clearSession();
-    redirectToLogin();
+    window.location.replace('index.html');
   });
 }
 
@@ -238,8 +234,7 @@ export async function initAppShell(role) {
     return null;
   }
 
-  const activeKey = document.body.dataset.nav;
-  byId('app-header').replaceWith(renderHeader(usuario, activeKey));
+  byId('app-header').replaceWith(renderHeader(usuario, document.body.dataset.nav));
   byId('app-footer').replaceWith(fromTemplate(FOOTER_TEMPLATE));
   document.body.append(fromTemplate(ACCOUNT_MODALS_TEMPLATE));
   bindAccountModals(usuario);

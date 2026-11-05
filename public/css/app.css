@@ -1,135 +1,383 @@
 /* ==========================================================================
-   Páginas internas (administrador, barbeiro e cliente).
+   Área logada (administrador, barbeiro e cliente)
    ========================================================================== */
-
-body {
-  font-size: 1.3rem;
-}
 
 /* Evita exibir o conteúdo antes de confirmar a sessão do usuário. */
 body:not(.is-ready) main {
   visibility: hidden;
 }
 
-main {
-  padding: 25px 1rem;
-  background-color: var(--color-peach);
-  color: var(--color-brown);
+body.is-ready main {
+  animation: rise-in 420ms var(--ease-out);
+}
+
+.app-main {
+  padding: 2.5rem 0 4rem;
+  background:
+    radial-gradient(1200px 400px at 85% -10%, rgba(201, 160, 99, 0.08), transparent 60%),
+    var(--espresso);
+}
+
+/* ---------- Cabeçalho da página ---------- */
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1.75rem;
 }
 
 .page-title {
-  margin: 0 0 1rem;
-  text-align: center;
-  color: var(--color-brown);
-  font-weight: bold;
+  margin: 0;
+  font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.6rem);
 }
 
-/* ---------- Formulários de consulta ---------- */
+.page-lead {
+  max-width: 60ch;
+  margin: 0.4rem 0 0;
+  color: var(--sand);
+}
+
+/* ---------- Painéis ---------- */
+
+.panel {
+  border: 1px solid var(--seam);
+  border-radius: var(--radius-lg);
+  background: var(--walnut);
+}
+
+.panel + .panel {
+  margin-top: 1.25rem;
+}
+
+.panel-filters {
+  padding: 1.25rem 1.5rem;
+}
+
+/* ---------- Formulário de filtros ---------- */
 
 .filter-form {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: center;
-  gap: 0.5rem 1.5rem;
-  margin: 1rem auto;
-  font-weight: bold;
+  gap: 1rem 1.25rem;
 }
 
 .filter-form .field {
   display: flex;
   flex-direction: column;
+  gap: 0.35rem;
+  min-width: 170px;
+  margin: 0;
+  color: var(--sand);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.filter-form input,
-.filter-form select {
-  margin-top: 0.4rem;
-  padding: 5px 12px;
-  border: none;
-  border-radius: var(--radius-pill);
+.filter-form .field-grow {
+  flex: 1 1 220px;
 }
 
 .filter-form .situacao {
-  display: flex;
-  flex-basis: 100%;
-  justify-content: center;
-  gap: 1.5rem;
+  display: inline-flex;
+  padding: 3px;
+  margin: 0 0 0 auto;
+  border: 1px solid var(--seam);
+  border-radius: 999px;
+  background: var(--espresso);
+}
+
+/* Alternador segmentado (Não concluídos / Concluídos) */
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label {
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  color: var(--sand);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease-out), color var(--duration) var(--ease-out);
+}
+
+.segmented input:checked + label {
+  background: var(--leather);
+  color: var(--ivory);
+}
+
+.segmented input:focus-visible + label {
+  outline: 2px solid var(--brass-bright);
+  outline-offset: 1px;
 }
 
 /* ---------- Tabelas ---------- */
 
 .table-wrapper {
-  display: flex;
-  justify-content: center;
   overflow-x: auto;
 }
 
 .table-app {
-  margin: 1.5rem 40px;
-  background-color: var(--color-white);
-  border-radius: 5px;
-  overflow: hidden;
-  text-align: center;
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--ivory);
+  --bs-table-border-color: var(--seam);
+  --bs-table-hover-bg: rgba(201, 160, 99, 0.06);
+  --bs-table-hover-color: var(--ivory);
+  margin: 0;
   vertical-align: middle;
 }
 
-.table-app th {
+.table-app thead th {
+  padding: 1rem 1.25rem;
+  border-bottom-color: var(--seam);
+  color: var(--sand);
+  font-size: 0.85rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
+.table-app td {
+  padding: 0.85rem 1.25rem;
+}
+
+.table-app tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-app tbody tr {
+  animation: fade-in 260ms var(--ease-out) both;
+}
+
+.table-app tbody tr:nth-child(2) { animation-delay: 20ms; }
+.table-app tbody tr:nth-child(3) { animation-delay: 40ms; }
+.table-app tbody tr:nth-child(4) { animation-delay: 60ms; }
+.table-app tbody tr:nth-child(5) { animation-delay: 80ms; }
+.table-app tbody tr:nth-child(n + 6) { animation-delay: 100ms; }
+
+.table-app tbody tr.is-selected {
+  --bs-table-bg: rgba(201, 160, 99, 0.12);
+}
+
+.table-app .col-horario {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.table-app .col-select {
+  width: 1%;
+  padding-right: 0.25rem;
+}
+
+.table-app .col-acoes {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table-muted {
+  color: var(--sand);
+}
+
 .table-empty {
-  padding: 1.5rem;
-  color: #6c757d;
-  font-style: italic;
+  padding: 3rem 1rem !important;
+  color: var(--sand);
+  text-align: center;
 }
 
 .btn-table {
-  padding: 2px 14px;
-  border: none;
-  border-radius: var(--radius-pill);
-  background-color: var(--color-peach);
-  color: var(--color-black);
-  font-weight: bold;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--seam);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ivory);
+  font-size: 0.9rem;
+  transition: border-color var(--duration) var(--ease-out), color var(--duration) var(--ease-out);
+}
+
+.btn-table:hover {
+  border-color: var(--brass);
+  color: var(--brass-bright);
 }
 
 .slot-checkbox {
-  width: 1.2em;
-  height: 1.2em;
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  cursor: pointer;
 }
 
-.page-actions {
+.slot-checkbox:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* ---------- Status ---------- */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--status-color) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-color) 12%, transparent);
+  color: var(--status-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-livre { --status-color: var(--sand); }
+.status-agendado { --status-color: var(--brass-bright); }
+.status-concluido { --status-color: var(--sage); }
+.status-cancelado { --status-color: var(--brick); }
+.status-bloqueado { --status-color: var(--slate); }
+.status-encerrado { --status-color: #7d6c5c; }
+
+/* ---------- Barra de ações da agenda ---------- */
+
+.action-bar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--seam);
+}
+
+.selection-count {
+  color: var(--sand);
+  font-size: 0.9rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.page-actions a.btn-app {
-  text-decoration: none;
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  color: var(--sand);
+  font-size: 0.85rem;
 }
 
-/* ---------- Formulários dos modais de cadastro ---------- */
+/* ---------- Modais de cadastro ---------- */
 
-.modal-body .form-label {
-  margin-top: 0.75rem;
+.modal-section-title {
+  margin: 0 0 0.75rem;
+  color: var(--brass-bright);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
 }
 
-.days-list .form-check {
-  margin-bottom: 0.25rem;
+.modal-body fieldset {
+  min-width: 0;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+
+/* Dias como "chips" selecionáveis */
+.chip input {
+  position: absolute;
+  opacity: 0;
+}
+
+.chip label {
+  display: block;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--seam);
+  border-radius: 999px;
+  color: var(--sand);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-out);
+}
+
+.chip input:checked + label {
+  border-color: var(--brass);
+  background: rgba(201, 160, 99, 0.14);
+  color: var(--ivory);
+}
+
+.chip input:focus-visible + label {
+  outline: 2px solid var(--brass-bright);
+  outline-offset: 2px;
 }
 
 .services-select {
-  min-height: 10rem;
+  min-height: 9.5rem;
 }
 
-@media (max-width: 1000px) {
-  body {
-    font-size: 1rem;
-  }
+.form-hint {
+  color: var(--sand);
+  font-size: 0.8rem;
+}
+
+.account-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.6rem 1.5rem;
+  margin: 0;
+}
+
+.account-details dt {
+  color: var(--sand);
+  font-weight: 500;
+}
+
+.account-details dd {
+  margin: 0;
 }
 
 @media (max-width: 576px) {
-  .table-app {
-    margin: 1rem 0;
+  .app-main {
+    padding-top: 1.75rem;
+  }
+
+  .panel-filters,
+  .action-bar {
+    padding: 1rem;
+  }
+
+  .filter-form .field {
+    flex: 1 1 100%;
+  }
+
+  .filter-form .situacao {
+    margin-left: 0;
+  }
+
+  .action-buttons {
+    width: 100%;
+  }
+
+  .action-buttons > * {
+    flex: 1 1 auto;
+  }
+
+  .table-app thead th,
+  .table-app td {
+    padding: 0.75rem;
   }
 }

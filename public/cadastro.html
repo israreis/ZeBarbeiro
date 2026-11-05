@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="img/logo.png" type="image/png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <title>Criar conta | Zé Barbeiro</title>
+  <script type="module" src="js/pages/cadastro.js"></script>
+</head>
+
+<body>
+  <main class="auth">
+    <aside class="auth-visual" aria-hidden="true">
+      <a class="brand" href="index.html" tabindex="-1">
+        <img src="img/logo.png" alt="">
+        <span class="brand-name">Zé Barbeiro</span>
+      </a>
+      <div>
+        <p class="auth-quote">Mais de quarenta anos cuidando de cabelo e barba em Belo Horizonte.</p>
+        <p class="auth-quote-caption">Escolha o barbeiro, o serviço e o horário em poucos cliques.</p>
+      </div>
+    </aside>
+
+    <section class="auth-content">
+      <div class="auth-card">
+        <a class="auth-back" href="index.html">Voltar para o site</a>
+        <h1 class="auth-title">Criar conta</h1>
+        <p class="auth-subtitle">Leva menos de um minuto. Depois é só escolher o horário.</p>
+
+        <form id="form-cadastro" class="auth-form" novalidate>
+          <div class="form-alert" role="alert" data-form-alert hidden></div>
+
+          <div class="field">
+            <label for="cadastro-nome" class="form-label">Nome completo</label>
+            <input type="text" class="form-control" id="cadastro-nome" name="nome" maxlength="120"
+              autocomplete="name" required autofocus>
+          </div>
+
+          <div class="field">
+            <label for="cadastro-email" class="form-label">E-mail</label>
+            <input type="email" class="form-control" id="cadastro-email" name="email" placeholder="voce@exemplo.com"
+              autocomplete="email" required>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="cadastro-telefone" class="form-label">Celular</label>
+              <input type="tel" class="form-control" id="cadastro-telefone" name="telefone"
+                placeholder="(31)99999-9999" autocomplete="tel" required>
+            </div>
+            <div class="field">
+              <label for="cadastro-nascimento" class="form-label">Nascimento <span class="form-hint">(opcional)</span></label>
+              <input type="date" class="form-control" id="cadastro-nascimento" name="dataNascimento" autocomplete="bday">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="cadastro-senha" class="form-label">Senha</label>
+            <div class="password-field">
+              <input type="password" class="form-control" id="cadastro-senha" name="senha" minlength="8"
+                autocomplete="new-password" required aria-describedby="cadastro-senha-dica">
+              <button type="button" class="password-toggle" data-toggle-password="cadastro-senha"
+                aria-controls="cadastro-senha" aria-pressed="false">Mostrar</button>
+            </div>
+            <div class="strength" data-strength aria-hidden="true"><span></span><span></span><span></span></div>
+            <p class="form-hint mt-1 mb-0" id="cadastro-senha-dica">Use pelo menos 8 caracteres, misturando letras e números.</p>
+          </div>
+
+          <button type="submit" class="btn-app auth-submit mt-2">Criar conta</button>
+        </form>
+
+        <p class="auth-switch">Já tem conta? <a href="login.html">Entrar</a></p>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>

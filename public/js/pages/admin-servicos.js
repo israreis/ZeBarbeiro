@@ -2,17 +2,18 @@ import { initAppShell } from '../components/app-shell.js';
 import { initCrudPage } from '../components/crud-page.js';
 import { formatCurrency } from '../core/format.js';
 import { value } from '../core/forms.js';
+import { statusBadge } from '../components/status-badge.js';
 
 if (await initAppShell('administrador')) {
   await initCrudPage({
     resource: '/servicos',
-    titles: { create: 'CADASTRAR SERVIÇO', edit: 'EDITAR SERVIÇO' },
-    messages: { created: 'Serviço cadastrado com sucesso!', updated: 'Serviço atualizado com sucesso!' },
+    titles: { create: 'Novo serviço', edit: 'Editar serviço' },
+    messages: { created: 'Serviço cadastrado.', updated: 'Serviço atualizado.' },
     columns: [
       { render: (s) => s.nome },
-      { render: (s) => formatCurrency(s.valor) },
+      { className: 'col-horario', render: (s) => formatCurrency(s.valor) },
       { className: 'hide-sm', render: (s) => `${s.duracaoMinutos} min` },
-      { render: (s) => (s.ativo ? 'Ativo' : 'Inativo') },
+      { render: (s) => statusBadge(s.ativo ? 'Ativo' : 'Inativo') },
     ],
     fillForm(form, servico) {
       form.elements.nome.value = servico?.nome ?? '';

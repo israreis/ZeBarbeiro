@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meus Atendimentos | Zé Barbeiro</title>
+  <title>Meus atendimentos | Zé Barbeiro</title>
   <link rel="icon" href="img/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -19,42 +19,50 @@
 <body data-nav="atendimentos">
   <div id="app-header"></div>
 
-  <main>
-    <h1 class="page-title">MEUS ATENDIMENTOS</h1>
-    <form id="form-historico" class="filter-form" novalidate>
-      <label class="field">De
-        <input type="date" name="inicio" required>
-      </label>
-      <label class="field">Até
-        <input type="date" name="fim" required>
-      </label>
-      <button type="submit" class="btn-app">Buscar</button>
-      <fieldset class="situacao">
-        <legend class="visually-hidden">Situação</legend>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="situacao" id="situacao-pendentes" value="pendentes" checked>
-          <label class="form-check-label" for="situacao-pendentes">Não concluídos</label>
+  <main id="conteudo" class="app-main">
+    <div class="container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Meus atendimentos</h1>
+          <p class="page-lead">Seus horários agendados e o histórico de visitas.</p>
         </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="situacao" id="situacao-concluidos" value="concluidos">
-          <label class="form-check-label" for="situacao-concluidos">Concluídos</label>
+        <a class="btn-app" href="cliente-agendar.html">Agendar horário</a>
+      </div>
+      <section class="panel panel-filters" aria-label="Filtros">
+        <form id="form-historico" class="filter-form" novalidate>
+          <label class="field">De
+            <input class="form-control" type="date" name="inicio" required>
+          </label>
+          <label class="field">Até
+            <input class="form-control" type="date" name="fim" required>
+          </label>
+          <button type="submit" class="btn-app">Buscar</button>
+          <fieldset class="situacao segmented">
+            <legend class="visually-hidden">Situação</legend>
+            <input type="radio" name="situacao" id="situacao-pendentes" value="pendentes" checked>
+            <label for="situacao-pendentes">Em aberto</label>
+            <input type="radio" name="situacao" id="situacao-concluidos" value="concluidos">
+            <label for="situacao-concluidos">Concluídos</label>
+          </fieldset>
+        </form>
+      </section>
+      <section class="panel" aria-label="Resultados">
+        <div class="table-wrapper">
+          <table class="table table-hover table-app">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Horário</th>
+                <th scope="col">Barbeiro</th>
+                <th scope="col" class="hide-sm">Serviço</th>
+                <th scope="col" class="hide-sm">Valor</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-historico"></tbody>
+          </table>
         </div>
-      </fieldset>
-    </form>
-    <div class="table-wrapper">
-      <table class="table table-app">
-        <thead>
-          <tr>
-            <th scope="col">DATA</th>
-            <th scope="col">BARBEIRO</th>
-            <th scope="col" class="hide-sm">SERVIÇO</th>
-            <th scope="col" class="hide-sm">VALOR</th>
-            <th scope="col">HORÁRIO</th>
-            <th scope="col">STATUS</th>
-          </tr>
-        </thead>
-        <tbody id="tabela-historico"></tbody>
-      </table>
+      </section>
     </div>
   </main>
 

@@ -10,6 +10,7 @@ O projeto não tem dependências externas: o back-end usa apenas módulos nativo
 - [Como executar](#como-executar)
 - [Usuários de demonstração](#usuários-de-demonstração)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [Identidade visual](#identidade-visual)
 - [Arquitetura](#arquitetura)
 - [API](#api)
 - [Regras de negócio](#regras-de-negócio)
@@ -35,7 +36,7 @@ Pré-requisito: **Node.js 20 ou superior**. Não é necessário `npm install`.
 npm start
 ```
 
-Acesse <http://127.0.0.1:3000>.
+Acesse <http://127.0.0.1:3000>. O login fica em `/login.html` e o cadastro de clientes em `/cadastro.html`.
 
 Na primeira execução o arquivo `data/db.json` é criado a partir de `data/seed.json`. Para voltar aos dados de exemplo a qualquer momento:
 
@@ -71,12 +72,13 @@ Todos usam a senha **`barber123`**.
 ├── public/                   # Front-end servido estaticamente
 │   ├── css/
 │   │   ├── base.css          # Tokens de cor, cabeçalho, rodapé, modais, botões
-│   │   ├── app.css           # Páginas internas (formulários, tabelas)
+│   │   ├── app.css           # Área logada (painéis, filtros, tabelas, status)
+│   │   ├── auth.css          # Login e cadastro
 │   │   └── landing.css       # Página inicial
 │   ├── img/
 │   ├── js/
 │   │   ├── core/             # API, sessão, DOM, formulários, formatação, notificações
-│   │   ├── components/       # app-shell, crud-page, history-page
+│   │   ├── components/       # app-shell, crud-page, history-page, auth-form, status-badge
 │   │   └── pages/            # Um módulo por página
 │   └── *.html
 ├── scripts/
@@ -94,6 +96,25 @@ Todos usam a senha **`barber123`**.
 │   └── validation.js
 └── test/                     # Testes com node:test
 ```
+
+## Identidade visual
+
+A interface usa a mesma atmosfera da página inicial: madeira escura, couro e latão.
+
+| Token | Cor | Uso |
+| --- | --- | --- |
+| `--espresso` | `#1b130e` | Fundo |
+| `--walnut` | `#251a13` | Painéis e modais |
+| `--seam` | `#4a3628` | Bordas e divisores |
+| `--brass` | `#c9a063` | Ações principais e destaques |
+| `--ivory` | `#f3e9dc` | Texto |
+| `--sand` | `#bfae9a` | Texto secundário |
+
+- Títulos em serifa clássica (Palatino/Iowan, nativas do sistema, sem download de fontes) e textos em `system-ui`.
+- Bootstrap no tema escuro (`data-bs-theme="dark"`) com as variáveis sobrescritas em `base.css`.
+- Status dos atendimentos em selos coloridos (agendado, concluído, cancelado, bloqueado).
+- Animações curtas: entrada da página, abertura de modais e menus, notificações e linhas da tabela após uma busca. Tudo é desativado com `prefers-reduced-motion`.
+- Login e cadastro são páginas próprias, e não modais: têm URL própria, funcionam com o botão Voltar e com gerenciadores de senha, e recebem o usuário quando a sessão expira. O cadastro faz login automaticamente e leva direto ao agendamento.
 
 ## Arquitetura
 
