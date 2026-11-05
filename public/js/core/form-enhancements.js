@@ -53,20 +53,37 @@ function labelOf(control) {
   return control.labels?.[0] ?? null;
 }
 
+/**
+ * Em rótulos que envolvem o campo (<label>Barbeiro <select>), o texto é colocado num
+ * <span> para que o asterisco fique na mesma linha da palavra, e não abaixo dela.
+ */
+function wrapLabelText(label) {
+  const existing = label.querySelector(':scope > .field-label');
+  if (existing) return existing;
+  const span = document.createElement('span');
+  span.className = 'field-label';
+  const textNode = [...label.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+  if (textNode) {
+    span.textContent = textNode.textContent.trim();
+    textNode.replaceWith(span);
+  } else {
+    label.prepend(span);
+  }
+  return span;
+}
+
 function syncRequiredMark(control) {
   const label = labelOf(control);
   if (!label) return;
   const required = control.required && !control.disabled;
-  let mark = label.querySelector(':scope > .required-mark');
+  const target = label.contains(control) ? wrapLabelText(label) : label;
+  let mark = target.querySelector(':scope > .required-mark');
   if (required && !mark) {
     mark = document.createElement('span');
     mark.className = 'required-mark';
     mark.setAttribute('aria-hidden', 'true'); // o leitor de tela já anuncia "obrigatório"
     mark.textContent = '*';
-    // Em rótulos que envolvem o campo, o asterisco fica logo após o texto.
-    const textNode = [...label.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-    if (textNode && label.contains(control)) textNode.after(mark);
-    else label.append(mark);
+    target.append(mark);
   } else if (!required && mark) {
     mark.remove();
   }
