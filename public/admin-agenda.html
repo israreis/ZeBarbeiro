@@ -7,18 +7,45 @@
     <title>Adm_Barbeiro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/barbeiro_hist_atendimento.css">
-    <script src="js/barbeiro_hist_atendimento.js" defer></script>
-    <link rel="icon" href="img/Logo Zé Barbeiro 2.png" type="image/x-icon">
+    <link rel="stylesheet" href="css/admin-agenda.css">
+
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.11/jquery.mask.min.js"></script> -->
+    <script src="js/admin-agenda.js" defer></script>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- jQuery Masked Input Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.min.js"></script>
+
+    <!-- Arquivo JS personalizado -->
+    <script>
+        $(document).ready(function () {
+            // Função para aplicar máscaras
+            $('.mascara-cpf').mask('999.999.999-99');
+            $('.mascara-cel').mask('(99)99999-9999');
+            $('#telefone').mask('(99)99999-9999');
+            $('.mascara-tel').mask('(99)9999-9999');
+            $('.mascara-ip').mask('999.99.999.99');
+            $('.mascara-data-mes-ano').mask('99/9999');
+            $('.mascara-data').mask('99/99/9999', { placeholder: "dd/mm/YYYY" });
+            $('.mascara-data2').mask('99/9999', { placeholder: "mm/YYYY" });
+            $('.mascara-cep').mask('99999-999');
+        });
+    </script>
+    <!-- JavaScript do Bootstrap 5 -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
+    <link rel="icon" href="img/logo.png" type="image/x-icon">
 </head>
 
 <body>
     <header id="header" class="p-4 container-fluid  text-light justify-content-between"
-        style="background-image: url('img/Barbearia-capa1.jpg'); background-size: cover; background-position: center;">
+        style="background-image: url('img/capa-barbearia.jpg'); background-size: cover; background-position: center;">
         <section class="row">
             <nav class="navbar navbar-expand-lg  ">
                 <div class="container-fluid ">
-                    <a class="navbar-brand" href="index.html"><img id="logotipo" src="img/Logo Zé Barbeiro 2.png"
+                    <a class="navbar-brand" href="index.html"><img id="logotipo" src="img/logo.png "
                             style="max-height: 100px; max-width: 100px" alt=""></a>
 
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -28,20 +55,21 @@
                     </button>
                     <div class="collapse navbar-collapse justify-content-end" id="navbarNavAltMarkup">
                         <div class="navbar-nav justify-content-between">
-                            <a class="nav-link text-light" href="barbeiro-agenda.html">INÍCIO</a>
-                            <a class="nav-link text-light " href="barbeiro-agenda.html">MINHA AGENDA</a>
-                            <a class="nav-link text-light navmeusatendimento"
-                                href="barbeiro_hist_atendimento.html">ATENDIMENTOS REALIZADOS</a>
-
+                            <a class="nav-link text-light" href="admin-barbeiros.html">INÍCIO</a>
+                            <a class="nav-link text-light navbaribeiros" href="admin-barbeiros.html">BARBEIROS</a>
+                            <a class="nav-link text-light" href="admin-unidades.html">UNIDADES</a>
+                            <a class="nav-link text-light" href="admin-servicos.html">SERVIÇOS</a>
+                            <a class="nav-link text-light navatendimentos"
+                                href="admin-agenda.html">ATENDIMENTOS</a>
 
                         </div>
                         <!-- <a class="btn" href="#exampleModal-" role="button" style="background-color:#c79655 ;"><img
-                                src="img/ICONE USUARIO.png" style="max-height: 70px; max-width: 20px" alt=""></a> -->
+                                src="img/icone-usuario.png" style="max-height: 70px; max-width: 20px" alt=""></a> -->
 
                         <!-- Button trigger modal -->
                         <button type="button" class="btn rounded-pill px-3" data-bs-toggle="modal"
                             data-bs-target="#sairModal" style="background-color:#c79655 ;">
-                            <img src="img/ICONE USUARIO.png" style="max-height: 70px; max-width: 20px" alt="">
+                            <img src="img/icone-usuario.png" style="max-height: 70px; max-width: 20px" alt="">
                         </button>
 
                         <!-- Modal
@@ -50,22 +78,22 @@
                             <div class="modal-dialog modal-sm modal-posicao rounded-pill">
                                 <div class="modal-content" style="background-color:#fcd1a7 ;">
                                     <div class="modal-header border-0 m-0 p-0 ">
-                                        <button type="button" class="btn-close m-0 justify-content-end"
-                                            data-bs-dismiss="modal" aria-label="Close"></button>
+                                        <button type="button" class="btn-close m-0 justify-content-end" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body border-0 p-0 m-0">
 
                                         <a class="btn" href="#" role="button" style="background-color:#fcd1a7 ;"><img
-                                                src="img/ICONE USUARIO.png" style="max-height: 70px; max-width: 20px"
+                                                src="img/icone-usuario.png" style="max-height: 70px; max-width: 20px"
                                                 alt="">Minha conta</a>
                                         <a class="btn" href="#" role="button" style="background-color:#fcd1a7 ;"><img
-                                                src="img/cadeado.png" style="max-height: 70px; max-width: 20px"
+                                                src="img/icone-cadeado.png" style="max-height: 70px; max-width: 20px"
                                                 alt="">Alterar senha</a>
                                     </div>
                                     <div class="modal-footer border-0 p-0 m-0">
-                                        <a class="btn" href="index.html" role="button"
-                                            style="background-color:#fcd1a7 ;"><img src="img/sair.png"
-                                                style="max-height: 70px; max-width: 20px" alt="">Sair</a>
+                                        <a class="btn" href="index.html" role="button" style="background-color:#fcd1a7 ;"><img
+                                                src="img/icone-sair.png" style="max-height: 70px; max-width: 20px"
+                                                alt="">Sair</a>
 
                                     </div>
                                 </div>
@@ -85,17 +113,16 @@
 
                                         <a class="btn" href="#" role="button" style="background-color:#fcd1a7 ;"
                                             data-bs-toggle="modal" data-bs-target="#minhaContaModal"><img
-                                                src="img/ICONE USUARIO.png" style="max-height: 70px; max-width: 20px"
+                                                src="img/icone-usuario.png" style="max-height: 70px; max-width: 20px"
                                                 alt="">Minha conta</a>
                                         <a class="btn" href="#" role="button" style="background-color:#fcd1a7 ;"
-                                        data-bs-toggle="modal" data-bs-target="#alterarSenhaModal"><img
-                                                src="img/cadeado.png" style="max-height: 70px; max-width: 20px"
+                                            data-bs-toggle="modal" data-bs-target="#alterarSenhaModal"><img
+                                                src="img/icone-cadeado.png" style="max-height: 70px; max-width: 20px"
                                                 alt="">Alterar senha</a>
                                     </div>
                                     <div class="modal-footer border-0 p-0 m-0">
                                         <a class="btn" href="index.html" role="button"
-                                            style="background-color:#fcd1a7 ;" 
-                                            ><img src="img/sair.png"
+                                            style="background-color:#fcd1a7 ;"><img src="img/icone-sair.png"
                                                 style="max-height: 70px; max-width: 20px" alt="">Sair</a>
 
                                     </div>
@@ -105,7 +132,7 @@
 
                         <!-- Modal Minha Conta -->
                         <div class="modal fade" id="minhaContaModal" tabindex="-1"
-                            aria-labelledby="minhaContaModalLabel" aria-hidden="true" >
+                            aria-labelledby="minhaContaModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -130,8 +157,7 @@
                                         </form>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn"
-                                            data-bs-dismiss="modal">Fechar</button>
+                                        <button type="button" class="btn" data-bs-dismiss="modal">Fechar</button>
                                     </div>
                                 </div>
                             </div>
@@ -192,32 +218,34 @@
 
     <main>
         <div id="formulario-consulta">
-            <h1>HISTÓRICO DE ATENDIMENTOS</h1>
+            <h1>AGENDA DE ATENDIMENTOS</h1>
             <div class="formulario-consulta">
                 <form name="agenda_atendimentos" method="POST">
+                    <!-- Selecionar Barbeiro: <br> 
+                    <input type="options" list="barbeiros-cad" name="barbeiros-cad" id="barbeiros-cadastrados"><br>
+                    <datalist id="barbeiros-cad"> -->
+                    <!-- <option value="Barbeiro 01">
+                        <option value="Barbeiro 02">
+                        <option value="Barbeiro 03">
+                        <option value="Barbeiro 04">
+                        <option value="Barbeiro 05"> -->
+                    <!-- </datalist> -->
+                    <!-- <input type="submit"> -->
 
-                    Período:
+                    <label for="barbeiros-cadastrados">Selecionar Barbeiro:</label><br>
+                    <select id="barbeiros-cadastrados" name="barbeiros-cad">
+                        <option value="" disabled selected>Selecione um barbeiro</option>
+                    </select><br>
 
-                    <input type="date" name="data-agenda" id="data-inicio">
-                    a
-                    <input type="date" name="data-agenda" id="data-fim">
-                    <button type="button" id="buscar-agendamentos">Buscar</button>
-                    <div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="statusFiltro" id="statusConcluidos" value="Concluído">
-                        <label class="form-check-label" for="statusConcluidos">Concluídos</label>
-                      </div>
 
-                      <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="statusFiltro" id="statusNaoConcluidos" value="">
-                        <label class="form-check-label" for="statusConcluidos">Não Concluídos</label>
-                      </div>
-                    </div>
+                    Data: <br><input type="date" name="data-agenda" id=""><br>
+
+                    <!-- <input type="submit" value="Buscar"> -->
+                    <input type="button" value="Buscar">
 
                 </form>
             </div>
         </div>
-
         <div id="tabela-agenda-atendimento">
             <table class="table">
                 <caption></caption>
@@ -225,13 +253,10 @@
                     <tr>
                         <th class="data">DATA</th>
                         <th class="cliente">CLIENTE</th>
-                        <th class="servico">SERVICO</th>
+                        <th class="servico">SERVIÇO</th>
                         <th class="servicoValor">VALOR</th>
-
                         <th class="horario">HORÁRIO</th>
                         <th class="status">STATUS</th>
-                        
-
                     </tr>
 
                 </thead>
@@ -294,8 +319,9 @@
                 </tbody>
             </table>
         </div>
-
-        
+        <div id="btn-hist-atendimento">
+            <button><a href="admin-historico.html">HISTORICO DE ATENDIMENTO</a></button>
+        </div>
 
     </main>
 
@@ -329,10 +355,10 @@
                     <h5>REDES SOCIAIS</h5>
                     <ul class="nav flex-column ">
                         <li class="nav-item mb-2 "><a href="#" class="nav-link p-0 text-light"><img
-                                    src="img/INSTAGRAN.png" style="max-height: 70px; max-width: 20px" alt="">
+                                    src="img/icone-instagram.png" style="max-height: 70px; max-width: 20px" alt="">
                                 @agenda_barber</a></li>
                         <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-light"><img
-                                    src="img/FACEBOOK.png" style="max-height: 70px; max-width: 15px" alt="">
+                                    src="img/icone-facebook.png" style="max-height: 70px; max-width: 15px" alt="">
                                 @agenda_barber</a></li>
 
                     </ul>

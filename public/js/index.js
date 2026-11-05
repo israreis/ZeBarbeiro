@@ -46,11 +46,11 @@ function fazerLogin(){
         // Redirecionamento com base no tipo de usuário
         switch (usuario.tipousuario) {
           case 'administrador':
-            window.location.href = 'adm_barbeiro.html';
+            window.location.href = 'admin-barbeiros.html';
             // alert('Login realizado com sucesso!');
             break;
           case 'cliente':
-            window.location.href = 'cliente_agendar.html';
+            window.location.href = 'cliente-agendar.html';
             break;
           case 'barbeiro':
             window.location.href = 'barbeiro-agenda.html';
