@@ -6,6 +6,9 @@ import {
 import { todayIso } from '../core/format.js';
 import { notifyError, notifySuccess } from '../core/notify.js';
 import { ROLE_LABELS, initAppShell, refreshCurrentUser } from '../components/app-shell.js';
+import { avatar } from '../components/avatar.js';
+import { confirmDialog } from '../components/confirm-dialog.js';
+import { prepareSquarePhoto } from '../core/image.js';
 
 const PROFILE_FIELDS = ['nome', 'email', 'telefone', 'dataNascimento'];
 
@@ -59,6 +62,64 @@ function initPerfil(usuarioInicial) {
   fill();
 }
 
+/** Foto do barbeiro: enviada assim que escolhida, sem precisar salvar o formulário. */
+function initFoto(usuarioInicial) {
+  const container = document.querySelector('[data-foto-barbeiro]');
+  const preview = container.querySelector('[data-photo-preview]');
+  const input = byId('perfil-foto');
+  const removeButton = container.querySelector('[data-photo-remove]');
+  const chooseLabel = container.querySelector('label[for="perfil-foto"]');
+  let usuario = usuarioInicial;
+
+  const render = () => {
+    preview.replaceChildren(avatar(usuario, 'lg'));
+    removeButton.hidden = !usuario.fotoUrl;
+    chooseLabel.textContent = usuario.fotoUrl ? 'Trocar foto' : 'Adicionar foto';
+  };
+
+  const apply = (atualizado) => {
+    usuario = atualizado;
+    refreshCurrentUser(usuario);
+    render();
+  };
+
+  input.addEventListener('change', async () => {
+    const [file] = input.files;
+    input.value = '';
+    if (!file) return;
+    container.setAttribute('aria-busy', 'true');
+    try {
+      apply(await api.upload('/auth/me/foto', await prepareSquarePhoto(file)));
+      notifySuccess('Foto atualizada.');
+    } catch (error) {
+      notifyError(error);
+    } finally {
+      container.removeAttribute('aria-busy');
+    }
+  });
+
+  removeButton.addEventListener('click', () => withBusy(removeButton, async () => {
+    const confirmado = await confirmDialog({
+      title: 'Remover sua foto?',
+      message: 'Os clientes passarão a ver suas iniciais no lugar da foto.',
+      confirmLabel: 'Remover foto',
+      cancelLabel: 'Manter foto',
+      danger: true,
+    });
+    if (!confirmado) return;
+    try {
+      await api.delete('/auth/me/foto');
+      apply({ ...usuario, fotoUrl: null });
+      notifySuccess('Foto removida.');
+    } catch (error) {
+      notifyError(error);
+    }
+  }));
+
+  container.hidden = false;
+  render();
+}
+
 function initSenha() {
   const form = byId('form-senha');
   const submit = form.querySelector('[type="submit"]');
@@ -87,5 +148,6 @@ const usuario = await initAppShell(null);
 if (usuario) {
   document.querySelector('[data-perfil-descricao]').textContent = `Você acessa o sistema como ${ROLE_LABELS[usuario.perfil].toLowerCase()}.`;
   initPerfil(usuario);
+  if (usuario.perfil === 'barbeiro') initFoto(usuario);
   initSenha();
 }

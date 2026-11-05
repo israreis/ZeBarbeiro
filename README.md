@@ -26,7 +26,7 @@ O projeto não tem dependências externas: o back-end usa apenas módulos nativo
 | **Barbeiro** | Ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
 | **Administrador** | Cadastrar e editar barbeiros (foto, dias, horários e serviços) e serviços; consultar a agenda e o histórico de qualquer barbeiro. |
 
-Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha.
+Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha. Barbeiros também trocam a própria foto por ali.
 
 ## Como executar
 
@@ -143,6 +143,7 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 | POST | `/auth/logout` | autenticado | Encerra a sessão. |
 | GET | `/auth/me` | autenticado | Dados do usuário logado. |
 | PUT | `/auth/me` | autenticado | Edita nome, e-mail, celular e nascimento (trocar o e-mail exige `senhaAtual`). |
+| PUT / DELETE | `/auth/me/foto` | barbeiro | O próprio barbeiro troca ou remove sua foto. |
 | PUT | `/auth/senha` | autenticado | Altera a senha (`senhaAtual`, `novaSenha`). |
 | POST | `/clientes` | público | Cadastro de cliente. |
 | GET | `/barbeiros` | autenticado | Lista completa (admin) ou barbeiros ativos com seus serviços. |

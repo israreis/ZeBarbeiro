@@ -26,6 +26,11 @@ export function buildRouter({ sessions, store, services }) {
   const authenticated = requireRole(...ANY_ROLE);
   const adminOnly = requireRole(ADMIN);
 
+  /** Dados da conta; barbeiros recebem também a URL da foto. */
+  const withFoto = (usuario) => (usuario.perfil === BARBEIRO
+    ? { ...usuario, fotoUrl: barbeiros.fotoUrlOf(usuario.id) }
+    : usuario);
+
   const created = (ctx, value) => {
     ctx.status = 201;
     return value;
@@ -41,8 +46,17 @@ export function buildRouter({ sessions, store, services }) {
       auth.logout(ctx.token);
       noContent(ctx);
     })
-    .get('/api/auth/me', authenticated, (ctx) => toPublicUser(ctx.user))
-    .put('/api/auth/me', authenticated, (ctx) => auth.updateProfile(ctx.user, ctx.body, ctx.token))
+    .get('/api/auth/me', authenticated, (ctx) => withFoto(toPublicUser(ctx.user)))
+    .put('/api/auth/me', authenticated, async (ctx) => withFoto(await auth.updateProfile(ctx.user, ctx.body, ctx.token)))
+    // O barbeiro gerencia a própria foto pela página Minha conta.
+    .put('/api/auth/me/foto', { rawBody: true }, requireRole(BARBEIRO), async (ctx) => {
+      await barbeiros.setFoto(ctx.user.id, await ctx.readRawBody());
+      return withFoto(toPublicUser(ctx.user));
+    })
+    .delete('/api/auth/me/foto', requireRole(BARBEIRO), async (ctx) => {
+      await barbeiros.removeFoto(ctx.user.id);
+      noContent(ctx);
+    })
     .put('/api/auth/senha', authenticated, async (ctx) => {
       await auth.changePassword(ctx.user, ctx.body, ctx.token);
       noContent(ctx);

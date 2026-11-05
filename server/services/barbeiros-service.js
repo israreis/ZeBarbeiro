@@ -154,6 +154,12 @@ export function createBarbeirosService({
       await photos.remove(anterior);
     },
 
+    /** URL da foto do barbeiro (ou null), usada nos dados da própria conta. */
+    fotoUrlOf(id) {
+      const barbeiro = store.snapshot.barbeiros.find((b) => b.id === id);
+      return barbeiro ? fotoUrl(barbeiro) : null;
+    },
+
     async getFoto(id) {
       const barbeiro = store.snapshot.barbeiros.find((b) => b.id === id);
       if (!barbeiro?.foto) throw notFound('Foto não encontrada.');

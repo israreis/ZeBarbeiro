@@ -28,10 +28,23 @@
         </div>
       </div>
 
-      <div class="row g-4 align-items-start">
+      <div class="row g-4">
         <section class="col-lg-7" aria-labelledby="titulo-dados">
-          <form id="form-perfil" class="panel panel-form" novalidate>
+          <form id="form-perfil" class="panel panel-form h-100" novalidate>
             <h2 class="panel-title" id="titulo-dados">Dados pessoais</h2>
+            <div class="photo-field mb-4" data-foto-barbeiro hidden>
+              <div class="photo-preview" data-photo-preview></div>
+              <div>
+                <span class="form-label d-block mb-2" id="foto-rotulo">Sua foto</span>
+                <div class="d-flex flex-wrap gap-2">
+                  <label class="btn-ghost btn-sm-app" for="perfil-foto">Trocar foto</label>
+                  <input type="file" class="visually-hidden" id="perfil-foto" accept="image/jpeg,image/png,image/webp"
+                    aria-labelledby="foto-rotulo" aria-describedby="perfil-foto-dica">
+                  <button type="button" class="btn-ghost btn-sm-app" data-photo-remove>Remover foto</button>
+                </div>
+                <p class="form-hint mt-2 mb-0" id="perfil-foto-dica">É a foto que os clientes veem ao agendar. A troca vale na hora.</p>
+              </div>
+            </div>
             <p class="form-hint required-legend"><span class="required-mark" aria-hidden="true">*</span> Campos obrigatórios</p>
             <div class="row g-3">
               <div class="col-12">
@@ -72,7 +85,7 @@
         </section>
 
         <section class="col-lg-5" aria-labelledby="titulo-senha">
-          <form id="form-senha" class="panel panel-form" novalidate>
+          <form id="form-senha" class="panel panel-form h-100" novalidate>
             <h2 class="panel-title" id="titulo-senha">Alterar senha</h2>
             <label for="senha-atual" class="form-label">Senha atual</label>
             <input type="password" class="form-control mb-3" id="senha-atual" name="senhaAtual"

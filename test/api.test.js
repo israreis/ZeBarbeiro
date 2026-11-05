@@ -285,6 +285,23 @@ describe('foto do barbeiro', () => {
     assert.equal((await upload(token, Buffer.alloc(2 * 1024 * 1024))).status, 413);
   });
 
+  test('barbeiro troca e remove a própria foto pela conta', async () => {
+    const token = await login('b1@teste.com');
+    const res = await fetch(`${baseUrl}/api/auth/me/foto`, {
+      method: 'PUT', headers: { authorization: `Bearer ${token}`, 'content-type': 'image/png' }, body: PNG_1X1,
+    });
+    assert.equal(res.status, 200);
+    const { fotoUrl } = await res.json();
+    assert.match(fotoUrl, /^\/api\/barbeiros\/b1\/foto/);
+    assert.equal((await api('GET', '/api/auth/me', { token })).body.fotoUrl, fotoUrl);
+
+    assert.equal((await api('DELETE', '/api/auth/me/foto', { token })).status, 204);
+    assert.equal((await api('GET', '/api/auth/me', { token })).body.fotoUrl, null);
+
+    const cliente = await login('c1@teste.com');
+    assert.equal((await api('DELETE', '/api/auth/me/foto', { token: cliente })).status, 403);
+  });
+
   test('somente o administrador pode enviar foto', async () => {
     const token = await login('b1@teste.com');
     assert.equal((await upload(token, PNG_1X1)).status, 403);

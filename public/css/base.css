@@ -189,6 +189,12 @@ a {
 }
 
 /* Menu da conta */
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .account-trigger {
   display: inline-flex;
   align-items: center;
@@ -211,6 +217,7 @@ a {
   place-items: center;
   width: 32px;
   height: 32px;
+  overflow: hidden;
   border-radius: 50%;
   background: var(--brass);
   color: var(--espresso);

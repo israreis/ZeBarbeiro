@@ -428,6 +428,8 @@ body.is-ready main {
 /* ---------- Formulários em painel (Minha conta) ---------- */
 
 .panel-form {
+  display: flex;
+  flex-direction: column;
   padding: 1.75rem;
 }
 
@@ -441,7 +443,8 @@ body.is-ready main {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5rem;
-  margin-top: 1.75rem;
+  margin-top: auto;
+  padding-top: 1.75rem;
 }
 
 /* Campo que aparece sob demanda */

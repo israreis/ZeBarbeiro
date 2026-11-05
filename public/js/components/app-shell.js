@@ -94,7 +94,13 @@ export function fromTemplate(html) {
 function fillUser(root, usuario) {
   const firstName = usuario.nome.trim().split(/\s+/)[0];
   root.querySelector('[data-user-first-name]').textContent = firstName;
-  root.querySelector('[data-user-initial]').textContent = firstName.charAt(0).toUpperCase();
+  const initial = root.querySelector('[data-user-initial]');
+  // Barbeiros com foto veem a própria foto no menu da conta; os demais, a inicial do nome.
+  if (usuario.fotoUrl) {
+    initial.replaceChildren(el('img', { src: usuario.fotoUrl, alt: '' }));
+  } else {
+    initial.textContent = firstName.charAt(0).toUpperCase();
+  }
   root.querySelector('[data-user-role]').textContent = ROLE_LABELS[usuario.perfil];
 }
 
