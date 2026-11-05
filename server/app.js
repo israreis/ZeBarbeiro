@@ -2,7 +2,7 @@ import http from 'node:http';
 import { SessionStore } from './auth/sessions.js';
 import { RateLimiter } from './auth/rate-limiter.js';
 import { HttpError, notFound } from './http/errors.js';
-import { readJsonBody } from './http/body.js';
+import { readJsonBody, readRawBody } from './http/body.js';
 import { applySecurityHeaders, sendJson, sendNoContent } from './http/response.js';
 import { serveStatic } from './http/static.js';
 import { buildRouter } from './routes.js';
@@ -27,7 +27,7 @@ export function createApp({ store, config, clock, logger = console }) {
 
   const services = {
     auth: createAuthService({ store, sessions, loginLimiter }),
-    barbeiros: createBarbeirosService({ store, sessions }),
+    barbeiros: createBarbeirosService({ store, sessions, uploadsDir: config.uploadsDir }),
     servicos: createServicosService({ store }),
     unidades: createUnidadesService({ store }),
     agendamentos: createAgendamentosService({ store, clock: now }),
@@ -42,9 +42,12 @@ export function createApp({ store, config, clock, logger = console }) {
     const authorization = req.headers.authorization ?? '';
     const ctx = {
       req,
+      res,
       params: match.params,
       query: Object.fromEntries(url.searchParams),
-      body: await readJsonBody(req, config.maxBodyBytes),
+      body: match.options.rawBody ? undefined : await readJsonBody(req, config.maxBodyBytes),
+      readRawBody: () => readRawBody(req, config.maxUploadBytes),
+      handled: false, // true quando o handler já escreveu a resposta (ex.: arquivo)
       ip: req.socket.remoteAddress ?? 'desconhecido',
       token: authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : null,
       status: 200,
@@ -55,6 +58,7 @@ export function createApp({ store, config, clock, logger = console }) {
     for (const handler of match.handlers) {
       result = await handler(ctx);
     }
+    if (ctx.handled) return;
     if (ctx.status === 204) sendNoContent(res);
     else sendJson(res, ctx.status, result ?? null);
   }

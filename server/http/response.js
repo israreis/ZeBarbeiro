@@ -7,7 +7,7 @@ const SECURITY_HEADERS = Object.freeze({
     "default-src 'self'",
     "script-src 'self' https://cdn.jsdelivr.net",
     "style-src 'self' https://cdn.jsdelivr.net",
-    "img-src 'self' data:",
+    "img-src 'self' data: blob:",
     "font-src 'self' https://cdn.jsdelivr.net",
     "connect-src 'self'",
     "object-src 'none'",

@@ -54,6 +54,24 @@ export function buildRouter({ sessions, store, services }) {
     .get('/api/barbeiros/:id', adminOnly, (ctx) => barbeiros.get(ctx.params.id))
     .post('/api/barbeiros', adminOnly, async (ctx) => created(ctx, await barbeiros.create(ctx.body)))
     .put('/api/barbeiros/:id', adminOnly, (ctx) => barbeiros.update(ctx.params.id, ctx.body))
+    .put('/api/barbeiros/:id/foto', { rawBody: true }, adminOnly,
+      async (ctx) => barbeiros.setFoto(ctx.params.id, await ctx.readRawBody()))
+    .delete('/api/barbeiros/:id/foto', adminOnly, async (ctx) => {
+      await barbeiros.removeFoto(ctx.params.id);
+      noContent(ctx);
+    })
+    // Pública: fotos aparecem para clientes e são carregadas por <img>, que não envia o token.
+    .get('/api/barbeiros/:id/foto', async (ctx) => {
+      const { content, contentType } = await barbeiros.getFoto(ctx.params.id);
+      ctx.res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': content.length,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Content-Disposition': 'inline',
+      });
+      ctx.res.end(content);
+      ctx.handled = true;
+    })
 
     .get('/api/servicos', authenticated, (ctx) => servicos.list(ctx.user))
     .post('/api/servicos', adminOnly, async (ctx) => created(ctx, await servicos.create(ctx.body)))
@@ -64,7 +82,8 @@ export function buildRouter({ sessions, store, services }) {
     .put('/api/unidades/:id', adminOnly, (ctx) => unidades.update(ctx.params.id, ctx.body))
 
     // Agenda e atendimentos
-    .get('/api/agenda', authenticated, (ctx) => agendamentos.getAgenda(ctx.user, ctx.query))
+    .get('/api/agenda', requireRole(ADMIN, BARBEIRO), (ctx) => agendamentos.getAgenda(ctx.user, ctx.query))
+    .get('/api/disponibilidade', authenticated, (ctx) => agendamentos.disponibilidade(ctx.query))
     .get('/api/agendamentos', authenticated, (ctx) => agendamentos.history(ctx.user, ctx.query))
     .post('/api/agendamentos', requireRole(BARBEIRO, CLIENTE),
       async (ctx) => created(ctx, await agendamentos.create(ctx.user, ctx.body)))

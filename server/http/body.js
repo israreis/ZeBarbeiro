@@ -29,3 +29,18 @@ export async function readJsonBody(req, maxBytes) {
     throw badRequest('JSON inválido.');
   }
 }
+
+/** Lê o corpo bruto (binário) da requisição, com limite de tamanho. */
+export async function readRawBody(req, maxBytes) {
+  const declared = Number(req.headers['content-length'] ?? 0);
+  if (declared > maxBytes) throw new HttpError(413, 'O arquivo enviado é grande demais.');
+
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) throw new HttpError(413, 'O arquivo enviado é grande demais.');
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}

@@ -5,6 +5,8 @@ import { ROLES, toPublicUser } from '../domain/roles.js';
 import { WEEKDAYS, timeToMinutes } from '../domain/time.js';
 import { SLOT_MINUTES } from '../domain/agenda.js';
 import * as v from '../validation.js';
+import { createPhotoStorage } from './photo-storage.js';
+import { fotoUrl } from '../domain/barbeiro.js';
 
 function parseDadosPessoais(body) {
   return {
@@ -40,12 +42,16 @@ function assertEmailDisponivel(db, email, ignoreId) {
   }
 }
 
-export function createBarbeirosService({ store, sessions }) {
+export function createBarbeirosService({ store, sessions, uploadsDir }) {
+  const photos = createPhotoStorage(uploadsDir);
+
   const toAdminView = (barbeiro, db) => {
     const usuario = db.usuarios.find((u) => u.id === barbeiro.id);
+    const { foto, ...dados } = barbeiro;
     return {
       ...toPublicUser(usuario),
-      ...barbeiro,
+      ...dados,
+      fotoUrl: fotoUrl(barbeiro),
       servicos: barbeiro.servicoIds
         .map((id) => db.servicos.find((s) => s.id === id))
         .filter(Boolean)
@@ -57,6 +63,7 @@ export function createBarbeirosService({ store, sessions }) {
   const toClienteView = (barbeiro, db) => ({
     id: barbeiro.id,
     nome: db.usuarios.find((u) => u.id === barbeiro.id)?.nome ?? '',
+    fotoUrl: fotoUrl(barbeiro),
     servicos: barbeiro.servicoIds
       .map((id) => db.servicos.find((s) => s.id === id && s.ativo))
       .filter(Boolean),
@@ -111,6 +118,48 @@ export function createBarbeirosService({ store, sessions }) {
       // Senha redefinida pelo administrador invalida as sessões abertas do barbeiro.
       if (senhaHash) sessions.revokeUser(id);
       return atualizado;
+    },
+
+    /** Salva (ou substitui) a foto do barbeiro. O arquivo anterior é apagado após a troca. */
+    async setFoto(id, buffer) {
+      if (!store.snapshot.barbeiros.some((b) => b.id === id)) throw notFound('Barbeiro não encontrado.');
+      const fileName = await photos.save(buffer);
+      let anterior;
+      try {
+        const atualizado = await store.update((db) => {
+          const barbeiro = db.barbeiros.find((b) => b.id === id);
+          if (!barbeiro) throw notFound('Barbeiro não encontrado.');
+          anterior = barbeiro.foto;
+          barbeiro.foto = fileName;
+          return toAdminView(barbeiro, db);
+        });
+        await photos.remove(anterior);
+        return atualizado;
+      } catch (error) {
+        await photos.remove(fileName);
+        throw error;
+      }
+    },
+
+    async removeFoto(id) {
+      let anterior;
+      await store.update((db) => {
+        const barbeiro = db.barbeiros.find((b) => b.id === id);
+        if (!barbeiro) throw notFound('Barbeiro não encontrado.');
+        anterior = barbeiro.foto;
+        delete barbeiro.foto;
+      });
+      await photos.remove(anterior);
+    },
+
+    async getFoto(id) {
+      const barbeiro = store.snapshot.barbeiros.find((b) => b.id === id);
+      if (!barbeiro?.foto) throw notFound('Foto não encontrada.');
+      try {
+        return await photos.read(barbeiro.foto);
+      } catch {
+        throw notFound('Foto não encontrada.');
+      }
     },
   };
 }

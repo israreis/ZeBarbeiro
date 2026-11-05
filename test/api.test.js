@@ -2,12 +2,23 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../server/app.js';
 import { JsonStore } from '../server/db/store.js';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { hashPassword } from '../server/auth/password.js';
 
 const SENHA = 'senha-forte-1';
 const HOJE = { date: '2026-11-05', time: '10:00' }; // quinta-feira
 
+const uploadsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'barberapp-uploads-'));
+const PNG_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
 const testConfig = {
+  uploadsDir,
+  maxUploadBytes: 1024 * 1024,
   publicDir: new URL('../public', import.meta.url).pathname,
   sessionTtlMs: 60_000,
   maxBodyBytes: 64 * 1024,
@@ -89,7 +100,10 @@ beforeEach(async () => {
   baseUrl = `http://127.0.0.1:${server.address().port}`;
 });
 
-after(() => new Promise((resolve) => server.close(resolve)));
+after(async () => {
+  await new Promise((resolve) => server.close(resolve));
+  await fs.rm(uploadsDir, { recursive: true, force: true });
+});
 
 describe('autenticação', () => {
   test('login não expõe o hash da senha e aceita e-mail com maiúsculas', async () => {
@@ -209,18 +223,77 @@ describe('autorização por perfil', () => {
   });
 });
 
+describe('foto do barbeiro', () => {
+  const upload = (token, body, contentType = 'image/png') => fetch(`${baseUrl}/api/barbeiros/b1/foto`, {
+    method: 'PUT', headers: { authorization: `Bearer ${token}`, 'content-type': contentType }, body,
+  });
+
+  test('administrador envia, substitui e remove a foto; qualquer pessoa pode vê-la', async () => {
+    const token = await login('adm@teste.com');
+    const res = await upload(token, PNG_1X1);
+    assert.equal(res.status, 200);
+    const { fotoUrl } = await res.json();
+    assert.match(fotoUrl, /^\/api\/barbeiros\/b1\/foto\?v=/);
+
+    const imagem = await fetch(`${baseUrl}${fotoUrl}`);
+    assert.equal(imagem.status, 200);
+    assert.equal(imagem.headers.get('content-type'), 'image/png');
+    assert.deepEqual(Buffer.from(await imagem.arrayBuffer()), PNG_1X1);
+
+    const nova = await (await upload(token, PNG_1X1)).json();
+    assert.notEqual(nova.fotoUrl, fotoUrl, 'nova foto gera nova URL');
+    assert.equal((await fs.readdir(uploadsDir)).length, 1, 'arquivo anterior é apagado');
+
+    const cliente = await login('c1@teste.com');
+    const lista = await api('GET', '/api/barbeiros', { token: cliente });
+    assert.equal(lista.body[0].fotoUrl, nova.fotoUrl);
+
+    assert.equal((await api('DELETE', '/api/barbeiros/b1/foto', { token })).status, 204);
+    assert.equal((await fetch(`${baseUrl}${nova.fotoUrl}`)).status, 404);
+    assert.equal((await fs.readdir(uploadsDir)).length, 0);
+  });
+
+  test('rejeita arquivos que não são imagem, mesmo com Content-Type de imagem, e arquivos grandes', async () => {
+    const token = await login('adm@teste.com');
+    assert.equal((await upload(token, Buffer.from('<script>alert(1)</script>'))).status, 422);
+    assert.equal((await upload(token, Buffer.alloc(2 * 1024 * 1024))).status, 413);
+  });
+
+  test('somente o administrador pode enviar foto', async () => {
+    const token = await login('b1@teste.com');
+    assert.equal((await upload(token, PNG_1X1)).status, 403);
+  });
+});
+
 describe('agenda e agendamentos', () => {
-  test('cliente vê horários livres e os próprios, mas não os de outros clientes', async () => {
+  test('disponibilidade lista só horários livres e futuros, sem dados de outros clientes', async () => {
     const token = await login('c1@teste.com');
-    const { body } = await api('GET', '/api/agenda?barbeiroId=b1&data=2026-11-06', { token });
-    assert.equal(body.atende, true);
-    const horarios = body.horarios.map((h) => h.horario);
-    assert.ok(!horarios.includes('09:00'), 'horário de outro cliente não deve aparecer');
+    const { status, body } = await api('GET', '/api/disponibilidade?servicoId=s1&data=2026-11-06', { token });
+    assert.equal(status, 200);
+    assert.equal(body.servico.valor, 50);
+    assert.deepEqual(body.barbeiros.map((b) => b.barbeiro.id), ['b1'], 'só barbeiros ativos que fazem o serviço');
+    const { horarios } = body.barbeiros[0];
+    assert.ok(!horarios.includes('09:00'), 'horário ocupado não aparece');
     assert.equal(horarios.at(-1), '11:30', 'último horário termina no fim do expediente');
+    assert.equal(JSON.stringify(body).includes('Usuário c2'), false, 'não expõe quem ocupa os horários');
+
+    const hoje = await api('GET', '/api/disponibilidade?servicoId=s1&data=2026-11-05', { token });
+    assert.ok(hoje.body.barbeiros[0].horarios.every((h) => h > '10:00'), 'horários passados não aparecem');
+
+    const naoAtende = await api('GET', '/api/disponibilidade?servicoId=s1&barbeiroId=b1&data=2026-11-09', { token });
+    assert.equal(naoAtende.body.barbeiros[0].atende, false);
+    assert.deepEqual(naoAtende.body.barbeiros[0].horarios, []);
+
+    assert.equal((await api('GET', '/api/disponibilidade?servicoId=s2&data=2026-11-06', { token })).status, 404);
+  });
+
+  test('cliente não acessa a agenda completa do barbeiro', async () => {
+    const token = await login('c1@teste.com');
+    assert.equal((await api('GET', '/api/agenda?barbeiroId=b1&data=2026-11-06', { token })).status, 403);
   });
 
   test('agenda informa quando o barbeiro não atende no dia', async () => {
-    const token = await login('c1@teste.com');
+    const token = await login('adm@teste.com');
     const { body } = await api('GET', '/api/agenda?barbeiroId=b1&data=2026-11-09', { token });
     assert.deepEqual(body, { data: '2026-11-09', atende: false, horarios: [] });
   });
@@ -276,8 +349,8 @@ describe('agenda e agendamentos', () => {
     assert.equal(ok.status, 200);
     assert.equal(ok.body.status, 'Cancelado');
 
-    const agenda = await api('GET', '/api/agenda?barbeiroId=b1&data=2026-11-06', { token });
-    assert.ok(agenda.body.horarios.some((h) => h.horario === '09:00' && !h.agendamento));
+    const livres = await api('GET', '/api/disponibilidade?servicoId=s1&data=2026-11-06', { token });
+    assert.ok(livres.body.barbeiros[0].horarios.includes('09:00'));
 
     const c1 = await login('c1@teste.com');
     assert.equal((await api('PATCH', '/api/agendamentos/a-hoje/cancelar', { token: c1 })).status, 422);

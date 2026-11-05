@@ -20,9 +20,11 @@ export const config = Object.freeze({
   publicDir: path.join(rootDir, 'public'),
   dataFile: process.env.DATA_FILE || path.join(rootDir, 'data', 'db.json'),
   seedFile: path.join(rootDir, 'data', 'seed.json'),
+  uploadsDir: process.env.UPLOADS_DIR || path.join(rootDir, 'data', 'uploads'),
 
   sessionTtlMs: readInt('SESSION_TTL_MINUTES', 8 * 60) * 60 * 1000,
   maxBodyBytes: 64 * 1024,
+  maxUploadBytes: 2 * 1024 * 1024,
 
   loginRateLimit: Object.freeze({
     maxAttempts: readInt('LOGIN_MAX_ATTEMPTS', 5),

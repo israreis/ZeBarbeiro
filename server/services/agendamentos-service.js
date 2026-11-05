@@ -5,6 +5,7 @@ import {
   STATUS, findOccupant, generateSlots, slotEnd, worksOn,
 } from '../domain/agenda.js';
 import { isPast } from '../domain/time.js';
+import { fotoUrl } from '../domain/barbeiro.js';
 import * as v from '../validation.js';
 
 const TIPOS_RESERVA_BARBEIRO = [STATUS.AGENDADO_BARBEIRO, STATUS.BLOQUEADO];
@@ -114,34 +115,62 @@ export function createAgendamentosService({ store, clock }) {
 
   return {
     /**
-     * Horários do dia para um barbeiro.
-     * - Administrador/barbeiro: todos os horários com o detalhe de cada ocupação.
-     * - Cliente: horários livres e os próprios agendamentos (ocupações de terceiros são omitidas).
+     * Agenda completa do dia de um barbeiro (uso interno: administrador e barbeiro).
+     * Cada horário traz o detalhe da ocupação, se houver.
      */
     getAgenda(actor, query) {
       const db = store.snapshot;
       const data = v.isoDate(query.data);
-      const barbeiro = findBarbeiro(db, resolveBarbeiroId(actor, query.barbeiroId), {
-        exigirAtivo: actor.perfil === ROLES.CLIENTE,
-      });
-
+      const barbeiro = findBarbeiro(db, resolveBarbeiroId(actor, query.barbeiroId), { exigirAtivo: false });
       if (!worksOn(barbeiro, data)) return { data, atende: false, horarios: [] };
 
       const agora = clock();
-      const horarios = [];
-      for (const horario of generateSlots(barbeiro.horarioInicial, barbeiro.horarioFinal)) {
+      const horarios = generateSlots(barbeiro.horarioInicial, barbeiro.horarioFinal).map((horario) => {
         const ocupante = findOccupant(db.agendamentos, { barbeiroId: barbeiro.id, data, horario });
-        const proprio = ocupante && ocupante.clienteId === actor.id;
-        if (actor.perfil === ROLES.CLIENTE && ocupante && !proprio) continue;
-
-        horarios.push({
+        return {
           horario,
           horarioFim: slotEnd(horario),
           passado: isPast(data, horario, agora),
           agendamento: ocupante ? detalhar(db, ocupante) : null,
-        });
-      }
+        };
+      });
       return { data, atende: true, horarios };
+    },
+
+    /**
+     * Horários livres e futuros para agendar um serviço, agrupados por barbeiro.
+     * Não expõe nenhuma informação sobre quem ocupa os demais horários.
+     * @param {{ data: string, servicoId: string, barbeiroId?: string }} query
+     */
+    disponibilidade(query) {
+      const db = store.snapshot;
+      const data = v.isoDate(query.data);
+      const servicoId = v.requiredString(query.servicoId, 'serviço');
+      const servico = db.servicos.find((s) => s.id === servicoId && s.ativo);
+      if (!servico) throw notFound('Serviço não encontrado.');
+      const barbeiroId = query.barbeiroId ? String(query.barbeiroId) : null;
+
+      const agora = clock();
+      const barbeiros = db.barbeiros
+        .filter((b) => b.ativo && b.servicoIds.includes(servicoId) && (!barbeiroId || b.id === barbeiroId))
+        .map((barbeiro) => {
+          const nome = nomeUsuario(db, barbeiro.id);
+          const atende = worksOn(barbeiro, data);
+          const horarios = atende
+            ? generateSlots(barbeiro.horarioInicial, barbeiro.horarioFinal).filter((horario) => !isPast(data, horario, agora)
+              && !findOccupant(db.agendamentos, { barbeiroId: barbeiro.id, data, horario }))
+            : [];
+          return {
+            barbeiro: { id: barbeiro.id, nome, fotoUrl: fotoUrl(barbeiro) }, atende, horarios,
+          };
+        })
+        .filter((item) => item.barbeiro.nome)
+        .sort((a, b) => b.horarios.length - a.horarios.length || a.barbeiro.nome.localeCompare(b.barbeiro.nome, 'pt-BR'));
+
+      const { id, nome, valor, duracaoMinutos } = servico;
+      return {
+        data, servico: { id, nome, valor, duracaoMinutos }, barbeiros,
+      };
     },
 
     /** Histórico filtrado por período e situação, restrito ao escopo do perfil. */
