@@ -18,9 +18,11 @@ import { notifyError, notifySuccess } from '../core/notify.js';
  * @param {(form: HTMLFormElement, item: object|null) => void} options.fillForm preenche o form (null = novo)
  * @param {(form: HTMLFormElement, item: object|null) => object|null} options.readForm lê e valida; null aborta
  * @param {() => Promise<void>} [options.beforeLoad] carga de dados auxiliares (ex.: opções de selects)
+ * @param {(salvo: object, isEdit: boolean) => Promise<void>} [options.afterSave] etapa extra após salvar
+ *   (ex.: enviar a foto); recebe o registro retornado pela API
  */
 export async function initCrudPage({
-  resource, columns, titles, messages, fillForm, readForm, beforeLoad,
+  resource, columns, titles, messages, fillForm, readForm, beforeLoad, afterSave,
 }) {
   const tbody = byId('tabela-registros');
   const modalElement = byId('modal-registro');
@@ -65,15 +67,27 @@ export async function initCrudPage({
     if (!payload || !isFormValid(form)) return;
 
     withBusy(submit, async () => {
+      const isEdit = Boolean(editing);
+      let salvo;
       try {
-        if (editing) await api.put(`${resource}/${encodeURIComponent(editing.id)}`, payload);
-        else await api.post(resource, payload);
+        salvo = isEdit
+          ? await api.put(`${resource}/${encodeURIComponent(editing.id)}`, payload)
+          : await api.post(resource, payload);
+      } catch (error) {
+        notifyError(error);
+        return;
+      }
+
+      // O registro já existe: uma nova tentativa (ex.: se a etapa extra falhar) passa a ser edição.
+      editing = salvo;
+      try {
+        if (afterSave) await afterSave(salvo, isEdit);
         modal.hide(modalElement);
-        notifySuccess(editing ? messages.updated : messages.created);
-        await load();
+        notifySuccess(isEdit ? messages.updated : messages.created);
       } catch (error) {
         notifyError(error);
       }
+      await load();
     });
   });
 

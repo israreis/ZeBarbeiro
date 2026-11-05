@@ -31,6 +31,16 @@ export function formatDate(isoDate) {
   return `${day}/${month}/${year}`;
 }
 
+const longDate = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'UTC',
+});
+
+/** AAAA-MM-DD → "sexta-feira, 06/11" */
+export function formatDateLong(isoDate) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return longDate.format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 /** Data de hoje no fuso do navegador, no formato AAAA-MM-DD. */
 export function todayIso() {
   const now = new Date();
@@ -45,4 +55,16 @@ export function currentMonthRange() {
   const lastDay = new Date(year, month, 0).getDate();
   const prefix = today.slice(0, 8);
   return { inicio: `${prefix}01`, fim: `${prefix}${String(lastDay).padStart(2, '0')}` };
+}
+
+/** Soma dias a uma data ISO. */
+export function addDaysIso(isoDate, days) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+/** Horário atual (HH:MM) no fuso do navegador. */
+export function nowTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }

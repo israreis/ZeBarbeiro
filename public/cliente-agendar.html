@@ -24,49 +24,36 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Agendar horário</h1>
-          <p class="page-lead">Escolha o barbeiro, o serviço e a data. Depois marque os horários que deseja.</p>
+          <p class="page-lead">Escolha o serviço e a data. Mostramos os barbeiros com horários livres.</p>
         </div>
+        <a class="btn-ghost" href="cliente-atendimentos.html">Meus atendimentos</a>
       </div>
-      <section class="panel panel-filters" aria-label="Filtros">
-        <form id="form-agendar" class="filter-form" novalidate>
-          <label class="field field-grow">Barbeiro
-            <select class="form-select" name="barbeiroId" required></select>
-          </label>
+
+      <section class="panel panel-filters" aria-label="O que você procura">
+        <form id="form-busca" class="filter-form" novalidate>
           <label class="field field-grow">Serviço
-            <select class="form-select" name="servicoId"></select>
+            <select class="form-select" name="servicoId" required></select>
+          </label>
+          <label class="field field-grow">Barbeiro
+            <select class="form-select" name="barbeiroId"></select>
           </label>
           <label class="field">Data
             <input class="form-control" type="date" name="data" required>
           </label>
-          <button type="submit" class="btn-app">Ver horários</button>
+          <button type="submit" class="btn-app">Buscar horários</button>
         </form>
       </section>
-      <section class="panel" aria-label="Resultados">
-        <div class="table-wrapper">
-          <table class="table table-hover table-app">
-            <thead>
-              <tr>
-                <th scope="col"><span class="visually-hidden">Selecionar</span></th>
-                <th scope="col">Horário</th>
-                <th scope="col">Barbeiro</th>
-                <th scope="col" class="hide-sm">Serviço</th>
-                <th scope="col" class="hide-sm">Valor</th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody id="tabela-agenda"></tbody>
-          </table>
-        </div>
-        <div class="action-bar">
-          <span class="selection-count" data-selection-count aria-live="polite">Nenhum horário selecionado</span>
-          <div class="action-buttons">
-            <button type="button" class="btn-ghost" id="btn-cancelar">Cancelar agendamento</button>
-            <button type="button" class="btn-app" id="btn-agendar">Agendar</button>
-          </div>
-        </div>
-      </section>
+
+      <section class="availability" id="disponibilidade" aria-live="polite" aria-label="Barbeiros e horários livres"></section>
     </div>
   </main>
+
+  <div class="booking-bar" id="barra-confirmacao" hidden>
+    <div class="container booking-bar-inner">
+      <p class="booking-bar-text" data-resumo></p>
+      <button type="button" class="btn-app" id="btn-confirmar">Confirmar agendamento</button>
+    </div>
+  </div>
 
   <div id="app-footer"></div>
 </body>

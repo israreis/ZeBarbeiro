@@ -246,17 +246,7 @@ body.is-ready main {
 .status-bloqueado { --status-color: var(--slate); }
 .status-encerrado { --status-color: #7d6c5c; }
 
-/* ---------- Barra de ações da agenda ---------- */
-
-.action-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--seam);
-}
+/* ---------- Ações ---------- */
 
 .selection-count {
   color: var(--sand);
@@ -267,15 +257,6 @@ body.is-ready main {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  color: var(--sand);
-  font-size: 0.85rem;
 }
 
 /* ---------- Modais de cadastro ---------- */
@@ -414,8 +395,7 @@ body.is-ready main {
     padding-top: 1.75rem;
   }
 
-  .panel-filters,
-  .action-bar {
+  .panel-filters {
     padding: 1rem;
   }
 
@@ -524,5 +504,163 @@ body.is-ready main {
 @media (max-width: 576px) {
   .table-toolbar {
     padding: 0.9rem 1rem;
+  }
+}
+
+/* ---------- Avatares e foto do barbeiro ---------- */
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--leather);
+  box-shadow: 0 0 0 1px var(--seam);
+}
+
+.avatar-sm { width: 36px; height: 36px; font-size: 0.8rem; }
+.avatar-md { width: 56px; height: 56px; font-size: 1.1rem; }
+.avatar-lg { width: 96px; height: 96px; font-size: 1.8rem; }
+
+.avatar-initials {
+  color: var(--brass-bright);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.photo-field {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.photo-field label.btn-ghost {
+  margin: 0;
+}
+
+.photo-field label:has(+ input:focus-visible) {
+  outline: 2px solid var(--brass-bright);
+  outline-offset: 2px;
+}
+
+/* ---------- Agendamento do cliente: barbeiros e horários livres ---------- */
+
+.availability {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.availability[aria-busy='true'] {
+  opacity: 0.55;
+  transition: opacity var(--duration) var(--ease-out);
+}
+
+.barber-card {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  padding: 1.5rem;
+  animation: rise-in 360ms var(--ease-out) both;
+}
+
+.barber-card:nth-child(2) { animation-delay: 50ms; }
+.barber-card:nth-child(3) { animation-delay: 100ms; }
+.barber-card:nth-child(n + 4) { animation-delay: 150ms; }
+
+.barber-card.is-unavailable {
+  opacity: 0.6;
+}
+
+.barber-card-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.barber-card-name {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.barber-card-meta {
+  margin: 0.25rem 0 0;
+  color: var(--sand);
+  font-size: 0.9rem;
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.chip-slot label {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.chip-slot input:checked + label {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--espresso);
+}
+
+.empty-state {
+  padding: 2rem 1.5rem;
+  color: var(--sand);
+  text-align: center;
+}
+
+/* Barra de confirmação fixa no rodapé da tela */
+.booking-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 1010;
+  padding: 1rem 0;
+  border-top: 1px solid var(--brass-deep);
+  background: rgba(37, 26, 19, 0.96);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -12px 30px -12px rgba(0, 0, 0, 0.6);
+  animation: rise-in 260ms var(--ease-out);
+}
+
+.booking-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.booking-bar-text {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.booking-bar-text span {
+  color: var(--sand);
+}
+
+@media (max-width: 768px) {
+  .barber-card {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .booking-bar-inner > .btn-app {
+    width: 100%;
   }
 }

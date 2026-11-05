@@ -22,9 +22,9 @@ O projeto não tem dependências externas: o back-end usa apenas módulos nativo
 
 | Perfil | O que pode fazer |
 | --- | --- |
-| **Cliente** | Criar conta, agendar um ou mais horários, cancelar agendamentos futuros e consultar o histórico. |
+| **Cliente** | Criar conta, escolher o serviço e ver os barbeiros (com foto) que têm horários livres na data, agendar, cancelar agendamentos futuros e consultar o histórico. |
 | **Barbeiro** | Ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
-| **Administrador** | Cadastrar e editar barbeiros (dias, horários e serviços), serviços e unidades; consultar a agenda e o histórico de qualquer barbeiro. |
+| **Administrador** | Cadastrar e editar barbeiros (foto, dias, horários e serviços), serviços e unidades; consultar a agenda e o histórico de qualquer barbeiro. |
 
 Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha.
 
@@ -68,7 +68,8 @@ Todos usam a senha **`barber123`**.
 ```text
 .
 ├── data/
-│   └── seed.json             # Dados de exemplo (db.json é gerado e não é versionado)
+│   ├── seed.json             # Dados de exemplo (db.json é gerado e não é versionado)
+│   └── uploads/              # Fotos dos barbeiros (geradas em uso, não versionadas)
 ├── public/                   # Front-end servido estaticamente
 │   ├── css/
 │   │   ├── base.css          # Tokens de cor, cabeçalho, rodapé, modais, botões
@@ -144,10 +145,13 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 | POST | `/clientes` | público | Cadastro de cliente. |
 | GET | `/barbeiros` | autenticado | Lista completa (admin) ou barbeiros ativos com seus serviços. |
 | GET / POST / PUT | `/barbeiros[/:id]` | administrador | Consulta, cadastro e edição. |
+| PUT / DELETE | `/barbeiros/:id/foto` | administrador | Envia (corpo binário JPG/PNG/WEBP, até 2 MB) ou remove a foto. |
+| GET | `/barbeiros/:id/foto` | público | Imagem da foto (usada nas telas de agendamento). |
 | GET | `/servicos` | autenticado | Todos (admin) ou somente ativos. |
 | POST / PUT | `/servicos[/:id]` | administrador | Cadastro e edição. |
 | GET / POST / PUT | `/unidades[/:id]` | administrador | Listagem, cadastro e edição. |
-| GET | `/agenda?barbeiroId=&data=` | autenticado | Horários do dia (barbeiro vê sempre a própria agenda). |
+| GET | `/agenda?barbeiroId=&data=` | barbeiro, administrador | Agenda completa do dia (barbeiro vê sempre a própria). |
+| GET | `/disponibilidade?servicoId=&data=&barbeiroId=` | autenticado | Horários livres e futuros por barbeiro, sem dados de outros clientes. |
 | GET | `/agendamentos?inicio=&fim=&situacao=&barbeiroId=` | autenticado | Histórico (`situacao`: `pendentes` ou `concluidos`). |
 | POST | `/agendamentos` | cliente, barbeiro | Reserva (cliente); atendimento manual com cliente e serviço, ou bloqueio (barbeiro). |
 | PATCH | `/agendamentos/:id/concluir` | barbeiro | Conclui um atendimento. |
@@ -158,7 +162,7 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 - Os horários têm 30 minutos e vão do início do expediente até o último horário que **termina** dentro dele (ex.: 16:00–19:00 gera 16:00 … 18:30).
 - Só é possível reservar em dias atendidos pelo barbeiro, dentro do expediente, em horários livres e que ainda não passaram.
 - Reservas de vários horários são atômicas: ou todos são criados, ou nenhum.
-- Clientes veem apenas horários livres e os próprios agendamentos; ocupações de outros clientes não são expostas.
+- Clientes não veem a agenda dos barbeiros: apenas os horários livres e futuros para o serviço escolhido. Quem ocupa os demais horários nunca é exposto.
 - Clientes cancelam apenas os próprios agendamentos futuros com status `Agendado`.
 - O barbeiro inclui atendimentos digitando o nome do cliente (celular opcional; não precisa ter cadastro) e escolhendo um serviço que ele oferece. O horário fica ocupado na hora, o valor vem do serviço e o status é "Agendado pelo barbeiro".
 - Barbeiros cancelam apenas bloqueios e atendimentos incluídos por eles, e só concluem atendimentos de hoje ou de datas anteriores.
@@ -174,6 +178,7 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login e cadas
 - Validação e normalização de toda entrada no servidor; limite de tamanho do corpo das requisições.
 - Cabeçalhos de segurança (`Content-Security-Policy` sem scripts inline, `X-Frame-Options`, `nosniff`, `Referrer-Policy`), Bootstrap carregado com SRI.
 - Apenas a pasta `public/` é servida, com proteção contra *path traversal*; o banco não é acessível pelo navegador.
+- Fotos: o navegador recorta e redesenha a imagem antes do envio (descartando metadados como GPS); o servidor valida o tipo pela assinatura do arquivo, limita o tamanho e salva com nome aleatório.
 - Front-end sem `innerHTML` com dados dinâmicos, eliminando XSS.
 
 > As sessões ficam em memória: reiniciar o servidor exige novo login. Para produção, use HTTPS (por exemplo, atrás de um proxy reverso) e um banco de dados gerenciado.
@@ -203,3 +208,4 @@ Variáveis de ambiente opcionais (veja `.env.example`):
 | `LOGIN_MAX_ATTEMPTS` | `5` | Tentativas de login antes do bloqueio temporário. |
 | `LOGIN_WINDOW_MINUTES` | `15` | Janela do bloqueio de login. |
 | `DATA_FILE` | `data/db.json` | Caminho do arquivo de dados. |
+| `UPLOADS_DIR` | `data/uploads` | Pasta das fotos dos barbeiros. |

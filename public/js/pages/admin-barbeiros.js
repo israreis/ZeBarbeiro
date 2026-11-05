@@ -8,6 +8,8 @@ import {
 import { WEEKDAY_LABELS, formatCurrency } from '../core/format.js';
 import { notifyError } from '../core/notify.js';
 import { statusBadge } from '../components/status-badge.js';
+import { avatar, personLabel } from '../components/avatar.js';
+import { prepareSquarePhoto } from '../core/image.js';
 
 const DEFAULT_SCHEDULE = { horarioInicial: '08:00', horarioFinal: '18:00' };
 
@@ -51,6 +53,64 @@ function setChecked(form, name, values) {
   form.querySelectorAll(`input[name="${name}"]`).forEach((input) => { input.checked = selected.has(input.value); });
 }
 
+/**
+ * Campo de foto do formulário: mantém a imagem escolhida (já recortada) até o
+ * barbeiro ser salvo, quando ela é enviada numa requisição própria.
+ */
+function createPhotoField(form) {
+  const preview = form.querySelector('[data-photo-preview]');
+  const input = byId('barbeiro-foto');
+  const removeButton = form.querySelector('[data-photo-remove]');
+  let state = { nome: '', fotoUrl: null, novaFoto: null, remover: false };
+  let objectUrl = null;
+
+  function render() {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = state.novaFoto ? URL.createObjectURL(state.novaFoto) : null;
+    const fotoUrl = objectUrl ?? (state.remover ? null : state.fotoUrl);
+    preview.replaceChildren(avatar({ nome: state.nome || '?', fotoUrl }, 'lg'));
+    removeButton.hidden = !fotoUrl;
+  }
+
+  input.addEventListener('change', async () => {
+    const [file] = input.files;
+    input.value = '';
+    if (!file) return;
+    try {
+      state = { ...state, novaFoto: await prepareSquarePhoto(file), remover: false };
+      render();
+    } catch (error) {
+      notifyError(error);
+    }
+  });
+
+  removeButton.addEventListener('click', () => {
+    state = { ...state, novaFoto: null, remover: true };
+    render();
+  });
+
+  form.elements.nome.addEventListener('input', () => {
+    state.nome = form.elements.nome.value;
+    if (!state.novaFoto && (state.remover || !state.fotoUrl)) render();
+  });
+
+  return {
+    reset(barbeiro) {
+      state = {
+        nome: barbeiro?.nome ?? '', fotoUrl: barbeiro?.fotoUrl ?? null, novaFoto: null, remover: false,
+      };
+      render();
+    },
+    /** Envia ou remove a foto conforme o que foi escolhido no formulário. */
+    async persist(barbeiro) {
+      const path = `/barbeiros/${encodeURIComponent(barbeiro.id)}/foto`;
+      if (state.novaFoto) await api.upload(path, state.novaFoto);
+      else if (state.remover && barbeiro.fotoUrl) await api.delete(path);
+      state = { ...state, novaFoto: null, remover: false };
+    },
+  };
+}
+
 function describeSchedule(barbeiro) {
   const dias = barbeiro.diasDisponiveis.map((dia) => WEEKDAY_LABELS[dia].slice(0, 3)).join(', ');
   return `${dias}, das ${barbeiro.horarioInicial} às ${barbeiro.horarioFinal}`;
@@ -58,6 +118,7 @@ function describeSchedule(barbeiro) {
 
 if (await initAppShell('administrador')) {
   const form = byId('form-registro');
+  const photo = createPhotoField(form);
   applyPhoneMask(form.elements.telefone);
 
   // Some a mensagem de erro do grupo assim que o usuário marca uma opção.
@@ -71,7 +132,7 @@ if (await initAppShell('administrador')) {
     titles: { create: 'Novo barbeiro', edit: 'Editar barbeiro' },
     messages: { created: 'Barbeiro cadastrado.', updated: 'Barbeiro atualizado.' },
     columns: [
-      { render: (b) => b.nome },
+      { render: (b) => personLabel(b) },
       { className: 'hide-sm table-muted', render: (b) => b.servicos.map((s) => s.nome).join(', ') },
       { className: 'hide-sm table-muted', render: describeSchedule },
       { render: (b) => statusBadge(b.ativo ? 'Ativo' : 'Inativo') },
@@ -87,6 +148,7 @@ if (await initAppShell('administrador')) {
 
     fillForm(target, barbeiro) {
       toggleCreateOnlyFields(target, !barbeiro);
+      photo.reset(barbeiro);
       for (const field of ['nome', 'email', 'telefone', 'dataNascimento']) {
         target.elements[field].value = barbeiro?.[field] ?? '';
       }
@@ -99,6 +161,8 @@ if (await initAppShell('administrador')) {
       byId('erro-dias').hidden = true;
       byId('erro-servicos').hidden = true;
     },
+
+    afterSave: (barbeiro) => photo.persist(barbeiro),
 
     readForm(target, barbeiro) {
       const isCreate = !barbeiro;

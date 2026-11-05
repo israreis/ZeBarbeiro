@@ -23,13 +23,19 @@ const COLUMN_DEFINITIONS = Object.freeze({
  * @param {object} options
  * @param {string[]} options.columns colunas exibidas (chaves de COLUMN_DEFINITIONS)
  * @param {boolean} [options.barberFilter] exibe o filtro de barbeiro (administrador)
+ * @param {(agendamento: object, reload: () => Promise<void>) => Node|null} [options.rowAction]
+ *   conteúdo de uma coluna extra de ações (ex.: botão de cancelar)
+ * @param {{inicio: string, fim: string}} [options.range] período inicial do filtro
  */
-export async function initHistoryPage({ columns, barberFilter = false }) {
+export async function initHistoryPage({
+  columns, barberFilter = false, rowAction, range = currentMonthRange(),
+}) {
   const form = byId('form-historico');
   const tbody = byId('tabela-historico');
   const columnDefs = columns.map((key) => COLUMN_DEFINITIONS[key]);
+  if (rowAction) columnDefs.push({ className: 'col-acoes', render: (ag) => rowAction(ag, search) });
 
-  const { inicio, fim } = currentMonthRange();
+  const { inicio, fim } = range;
   form.elements.inicio.value = inicio;
   form.elements.fim.value = fim;
 

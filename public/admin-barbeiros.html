@@ -56,6 +56,19 @@
         </div>
         <div class="modal-body">
           <h3 class="modal-section-title">Dados pessoais</h3>
+          <div class="photo-field mb-3">
+            <div class="photo-preview" data-photo-preview></div>
+            <div>
+              <span class="form-label d-block mb-2" id="foto-rotulo">Foto</span>
+              <div class="d-flex flex-wrap gap-2">
+                <label class="btn-ghost btn-sm-app" for="barbeiro-foto">Escolher foto</label>
+                <input type="file" class="visually-hidden" id="barbeiro-foto" accept="image/jpeg,image/png,image/webp"
+                  aria-labelledby="foto-rotulo" aria-describedby="barbeiro-foto-dica">
+                <button type="button" class="btn-ghost btn-sm-app" data-photo-remove>Remover foto</button>
+              </div>
+              <p class="form-hint mt-2 mb-0" id="barbeiro-foto-dica">JPG, PNG ou WEBP. A imagem é recortada em formato quadrado.</p>
+            </div>
+          </div>
           <div class="row g-3">
             <div class="col-md-6">
               <label for="barbeiro-nome" class="form-label">Nome</label>
