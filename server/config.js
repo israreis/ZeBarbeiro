@@ -77,7 +77,7 @@ export function loadConfig(env = process.env) {
   });
 }
 
-/** Carrega o arquivo .env da raiz, se existir (Node ≥ 20.12, sem dependência extra). */
+/** Carrega o arquivo .env da raiz, se existir (nativo do Node, sem dependência extra). */
 export function loadEnvFile(file = path.join(rootDir, '.env')) {
   try {
     process.loadEnvFile(file);

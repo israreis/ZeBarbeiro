@@ -31,7 +31,7 @@ Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nasci
 
 ## Como executar
 
-Pré-requisitos: **Node.js 20.12 ou superior** e um projeto no [Supabase](https://supabase.com) (o plano gratuito atende).
+Pré-requisitos: **Node.js 22 ou superior** e um projeto no [Supabase](https://supabase.com) (o plano gratuito atende).
 
 1. Instale as dependências:
 
