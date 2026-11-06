@@ -642,3 +642,82 @@ input[type='time']::-webkit-calendar-picker-indicator {
 .required-legend {
   margin: 0 0 1rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Senha forte: medidor e requisitos (cadastro, minha conta, cadastro de barbeiro)
+   --------------------------------------------------------------------------- */
+.password-strength {
+  margin-top: 0.5rem;
+}
+
+.strength-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.strength {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.strength span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--seam);
+  transition: background-color var(--duration) var(--ease-out);
+}
+
+.strength[data-level='1'] span:nth-child(-n + 1) { background: var(--brick); }
+.strength[data-level='2'] span:nth-child(-n + 2) { background: var(--brass); }
+.strength[data-level='3'] span:nth-child(-n + 3) { background: var(--sage); }
+
+.strength-label {
+  min-width: 6.5rem;
+  font-size: 0.8rem;
+  text-align: right;
+  color: var(--bs-secondary-color);
+}
+
+.strength-label[data-level='1'] { color: var(--brick); }
+.strength-label[data-level='2'] { color: var(--brass); }
+.strength-label[data-level='3'] { color: var(--sage); }
+
+.password-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.2rem 1rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  color: var(--bs-secondary-color);
+}
+
+.password-rules li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  transition: color var(--duration) var(--ease-out);
+}
+
+.password-rules li::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  transform: translateY(-0.05rem);
+  transition: background-color var(--duration) var(--ease-out), border-color var(--duration) var(--ease-out);
+}
+
+.password-rules li[data-ok='true'] {
+  color: var(--sage);
+}
+
+.password-rules li[data-ok='true']::before {
+  background: currentColor;
+}

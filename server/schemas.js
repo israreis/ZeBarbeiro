@@ -37,10 +37,22 @@ export const email = (campo = 'e-mail') => texto(campo, { max: 254 })
   .toLowerCase()
   .regex(EMAIL_PATTERN, `Informe um ${campo} válido.`);
 
+/** Requisitos de senha forte (os mesmos exibidos nas telas, em password-strength.js). */
+export const PASSWORD_RULES = Object.freeze([
+  { test: (s) => /\p{Lu}/u.test(s), message: 'pelo menos uma letra maiúscula' },
+  { test: (s) => /\p{Ll}/u.test(s), message: 'pelo menos uma letra minúscula' },
+  { test: (s) => /\d/.test(s), message: 'pelo menos um número' },
+  { test: (s) => /[^\p{L}\d\s]/u.test(s), message: 'pelo menos um caractere especial (ex.: ! @ # $ %)' },
+]);
+
 export const senha = (campo = 'senha') => z
   .string({ required_error: `A ${campo} deve ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.` })
   .min(PASSWORD_MIN_LENGTH, `A ${campo} deve ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`)
-  .max(128, `A ${campo} deve ter no máximo 128 caracteres.`);
+  .max(128, `A ${campo} deve ter no máximo 128 caracteres.`)
+  .superRefine((value, ctx) => {
+    const falha = PASSWORD_RULES.find((rule) => !rule.test(value));
+    if (falha) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `A ${campo} deve ter ${falha.message}.` });
+  });
 
 /** Aceita telefone com ou sem máscara; normaliza para (99)99999-9999 / (99)9999-9999. */
 export const telefone = (campo = 'telefone') => texto(campo, { max: 20 }).transform((value, ctx) => {

@@ -66,7 +66,7 @@ test('rate limiter bloqueia após o limite e libera após a janela', () => {
 });
 
 const cliente = {
-  nome: '  Fulano  ', email: '  Fulano@Exemplo.COM ', telefone: '31 97144 8208', dataNascimento: '2000-01-01', senha: 'abcdefgh',
+  nome: '  Fulano  ', email: '  Fulano@Exemplo.COM ', telefone: '31 97144 8208', dataNascimento: '2000-01-01', senha: 'Abcdef#12',
 };
 
 test('esquemas normalizam entradas e descartam campos desconhecidos', () => {
@@ -90,6 +90,10 @@ test('esquemas devolvem mensagens claras (422)', () => {
   };
   const hoje = '2026-11-05';
   assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, senha: '1234567' })).message, /pelo menos 8/);
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, senha: 'abcdef#12' })).message, /maiúscula/);
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, senha: 'ABCDEF#12' })).message, /minúscula/);
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, senha: 'Abcdef#gh' })).message, /número/);
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, senha: 'Abcdef123' })).message, /especial/);
   assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, telefone: '1234' })).message, /telefone válido/);
   assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, dataNascimento: '2010-11-06' })).message, /responsável/);
   assert.equal(erro(() => parse(cadastroClienteSchema(hoje), {})).status, 422);

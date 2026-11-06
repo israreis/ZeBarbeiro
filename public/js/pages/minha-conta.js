@@ -9,6 +9,7 @@ import { ROLE_LABELS, initAppShell, refreshCurrentUser } from '../components/app
 import { avatar } from '../components/avatar.js';
 import { confirmDialog } from '../components/confirm-dialog.js';
 import { prepareSquarePhoto } from '../core/image.js';
+import { attachPasswordStrength } from '../components/password-strength.js';
 
 const PROFILE_FIELDS = ['nome', 'email', 'telefone', 'dataNascimento'];
 
@@ -123,6 +124,7 @@ function initFoto(usuarioInicial) {
 function initSenha() {
   const form = byId('form-senha');
   const submit = form.querySelector('[type="submit"]');
+  attachPasswordStrength(form.elements.novaSenha);
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();

@@ -12,13 +12,8 @@ const MENSAGEM_MENOR_DE_IDADE = `Clientes menores de ${IDADE_MINIMA} anos precis
 import { HOME_BY_ROLE, getSession, saveSession } from '../core/session.js';
 import { errorMessage, setFormError } from '../components/auth-form.js';
 import { enhanceForms } from '../core/form-enhancements.js';
+import { attachPasswordStrength } from '../components/password-strength.js';
 
-/** Força estimada da senha (0 a 3) para orientar o usuário enquanto digita. */
-function passwordStrength(password) {
-  if (password.length < 8) return password ? 1 : 0;
-  const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(password)).length;
-  return variety >= 3 || password.length >= 14 ? 3 : 2;
-}
 
 const session = getSession();
 if (session) {
@@ -26,14 +21,11 @@ if (session) {
 } else {
   const form = byId('form-cadastro');
   const submit = form.querySelector('[type="submit"]');
-  const strength = form.querySelector('[data-strength]');
   enhanceForms(form);
   applyPhoneMask(form.elements.telefone);
 
   form.elements.dataNascimento.max = todayIso();
-  form.elements.senha.addEventListener('input', () => {
-    strength.dataset.level = String(passwordStrength(rawValue(form, 'senha')));
-  });
+  attachPasswordStrength(form.elements.senha);
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();

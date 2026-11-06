@@ -7,7 +7,7 @@ import {
   createMemoryIdentity, createMemoryPhotoStorage, createMemoryRepositories,
 } from './support/memory-adapters.js';
 
-const SENHA = 'senha-forte-1';
+const SENHA = 'Senha-forte-1';
 const HOJE = { date: '2026-11-05', time: '10:00' }; // quinta-feira
 
 const PNG_1X1 = Buffer.from(
@@ -143,20 +143,23 @@ describe('autenticação', () => {
 
   test('cadastro de cliente valida dados e impede e-mail duplicado', async () => {
     const dados = {
-      nome: 'Novo', email: 'novo@teste.com', senha: 'abcdefgh', telefone: '31988887777', dataNascimento: '2000-05-10',
+      nome: 'Novo', email: 'novo@teste.com', senha: 'Abcdef#12', telefone: '31988887777', dataNascimento: '2000-05-10',
     };
     const criado = await api('POST', '/api/clientes', { body: dados });
     assert.equal(criado.status, 201);
     assert.equal(criado.body.perfil, 'cliente');
     assert.equal(criado.body.telefone, '(31)98888-7777');
-    assert.equal((await api('POST', '/api/auth/login', { body: { email: 'novo@teste.com', senha: 'abcdefgh' } })).status, 200);
+    assert.equal((await api('POST', '/api/auth/login', { body: { email: 'novo@teste.com', senha: 'Abcdef#12' } })).status, 200);
 
     assert.equal((await api('POST', '/api/clientes', { body: { ...dados, email: 'NOVO@teste.com' } })).status, 409);
     assert.equal((await api('POST', '/api/clientes', { body: { ...dados, email: 'x@teste.com', senha: '123' } })).status, 422);
+    const fraca = await api('POST', '/api/clientes', { body: { ...dados, email: 'x@teste.com', senha: 'abcdefgh1' } });
+    assert.equal(fraca.status, 422);
+    assert.match(fraca.body.erro, /maiúscula/);
   });
 
   test('cadastro exige data de nascimento e bloqueia menores de 16 anos', async () => {
-    const base = { nome: 'Jovem', email: 'jovem@teste.com', senha: 'abcdefgh', telefone: '31988887777' };
+    const base = { nome: 'Jovem', email: 'jovem@teste.com', senha: 'Abcdef#12', telefone: '31988887777' };
     const semData = await api('POST', '/api/clientes', { body: base });
     assert.equal(semData.status, 422);
 
@@ -179,7 +182,7 @@ describe('autenticação', () => {
       body: {
         nome: 'X',
         email: 'x@teste.com',
-        senha: 'abcdefgh',
+        senha: 'Abcdef#12',
         telefone: '31988887777',
         dataNascimento: '2000-05-10',
         perfil: 'administrador',
@@ -213,10 +216,10 @@ describe('autenticação', () => {
   test('troca de senha exige a senha atual e encerra outras sessões', async () => {
     const outraSessao = await login('c1@teste.com');
     const token = await login('c1@teste.com');
-    const errada = await api('PUT', '/api/auth/senha', { token, body: { senhaAtual: 'x', novaSenha: 'nova-senha-1' } });
+    const errada = await api('PUT', '/api/auth/senha', { token, body: { senhaAtual: 'x', novaSenha: 'Nova-senha-1' } });
     assert.equal(errada.status, 422);
 
-    const ok = await api('PUT', '/api/auth/senha', { token, body: { senhaAtual: SENHA, novaSenha: 'nova-senha-1' } });
+    const ok = await api('PUT', '/api/auth/senha', { token, body: { senhaAtual: SENHA, novaSenha: 'Nova-senha-1' } });
     assert.equal(ok.status, 204);
     assert.equal((await api('GET', '/api/auth/me', { token })).status, 200);
     assert.equal((await api('GET', '/api/auth/me', { token: outraSessao })).status, 401);
@@ -242,7 +245,7 @@ describe('autorização por perfil', () => {
   test('administrador cadastra barbeiro de forma atômica e não recebe a senha', async () => {
     const token = await login('adm@teste.com');
     const novo = {
-      nome: 'Barbeiro Novo', email: 'bn@teste.com', senha: 'abcdefgh', telefone: '31977776666', dataNascimento: '1995-02-03',
+      nome: 'Barbeiro Novo', email: 'bn@teste.com', senha: 'Abcdef#12', telefone: '31977776666', dataNascimento: '1995-02-03',
       servicoIds: ['s1'], diasDisponiveis: ['segunda'], horarioInicial: '09:00', horarioFinal: '18:00',
     };
     const res = await api('POST', '/api/barbeiros', { token, body: novo });
@@ -250,7 +253,7 @@ describe('autorização por perfil', () => {
     assert.equal(res.body.senhaHash, undefined);
     assert.equal(res.body.ativo, true);
 
-    assert.equal((await api('POST', '/api/auth/login', { body: { email: 'bn@teste.com', senha: 'abcdefgh' } })).status, 200);
+    assert.equal((await api('POST', '/api/auth/login', { body: { email: 'bn@teste.com', senha: 'Abcdef#12' } })).status, 200);
 
     const usuariosAntes = identity.users.size;
     const invalido = await api('POST', '/api/barbeiros', { token, body: { ...novo, email: 'b2@teste.com' } });
@@ -270,7 +273,7 @@ describe('autorização por perfil', () => {
     const usuariosAntes = identity.users.size;
     const res = await api('POST', '/api/clientes', {
       body: {
-        nome: 'Z', email: 'z@teste.com', senha: 'abcdefgh', telefone: '31988887777', dataNascimento: '2000-05-10',
+        nome: 'Z', email: 'z@teste.com', senha: 'Abcdef#12', telefone: '31988887777', dataNascimento: '2000-05-10',
       },
     });
     repos.perfis.insert = insert;
@@ -286,13 +289,13 @@ describe('autorização por perfil', () => {
     const res = await api('PUT', '/api/barbeiros/b1', {
       token: admin,
       body: {
-        ...atual, servicoIds: atual.servicoIds, novaSenha: 'senha-nova-123', nome: 'Barbeiro Renomeado',
+        ...atual, servicoIds: atual.servicoIds, novaSenha: 'Senha-nova-123', nome: 'Barbeiro Renomeado',
       },
     });
     assert.equal(res.status, 200, JSON.stringify(res.body));
     assert.equal(res.body.nome, 'Barbeiro Renomeado');
     assert.equal((await api('GET', '/api/auth/me', { token: sessaoBarbeiro })).status, 401);
-    await login('b1@teste.com', 'senha-nova-123');
+    await login('b1@teste.com', 'Senha-nova-123');
   });
 });
 

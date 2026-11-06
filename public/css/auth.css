@@ -152,25 +152,6 @@
   display: none;
 }
 
-/* Indicador da força da senha */
-.strength {
-  display: flex;
-  gap: 4px;
-  margin-top: 0.5rem;
-}
-
-.strength span {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--seam);
-  transition: background-color var(--duration) var(--ease-out);
-}
-
-.strength[data-level='1'] span:nth-child(-n + 1) { background: var(--brick); }
-.strength[data-level='2'] span:nth-child(-n + 2) { background: var(--brass); }
-.strength[data-level='3'] span:nth-child(-n + 3) { background: var(--sage); }
-
 @media (max-width: 860px) {
   .auth {
     grid-template-columns: 1fr;

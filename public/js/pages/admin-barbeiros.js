@@ -10,6 +10,7 @@ import { notifyError } from '../core/notify.js';
 import { statusBadge } from '../components/status-badge.js';
 import { avatar, personLabel } from '../components/avatar.js';
 import { prepareSquarePhoto } from '../core/image.js';
+import { attachPasswordStrength } from '../components/password-strength.js';
 
 const DEFAULT_SCHEDULE = { horarioInicial: '08:00', horarioFinal: '18:00' };
 
@@ -119,6 +120,8 @@ function describeSchedule(barbeiro) {
 }
 
 if (await initAppShell('administrador')) {
+  // Na edição a nova senha é opcional: vazia, o campo é aceito.
+  attachPasswordStrength(byId('barbeiro-senha'));
   const form = byId('form-registro');
   const photo = createPhotoField(form);
   // Serviços inativos não aparecem no formulário, mas os vínculos já existentes são preservados
