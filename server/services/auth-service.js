@@ -19,6 +19,8 @@ export function createAuthService({
       await identity.signOut(session.accessToken);
       throw unauthorized('Conta sem cadastro na aplicação. Fale com a barbearia.');
     }
+    // O token acabou de ser emitido pelo Supabase: já entra no cache (o 1º /auth/me não espera).
+    sessionCache.set(session.accessToken, perfil);
     return {
       token: session.accessToken,
       refreshToken: session.refreshToken,
@@ -63,9 +65,13 @@ export function createAuthService({
       return sessionResponse(await identity.refresh(refreshToken));
     },
 
+    /**
+     * O token deixa de valer na API imediatamente (sai do cache); o encerramento no
+     * Supabase segue em segundo plano, sem fazer o usuário esperar.
+     */
     logout(token) {
       sessionCache.deleteToken(token);
-      return identity.signOut(token, 'local');
+      identity.signOut(token, 'local').catch(() => {});
     },
 
     /** Cadastro público: sempre cria um cliente (o perfil nunca vem do corpo da requisição). */

@@ -72,7 +72,7 @@ export async function apiRoutes(app, { services }) {
   app.post('/auth/login', (request) => auth.login(request.body, request.ip));
   app.post('/auth/refresh', (request) => auth.refresh(request.body));
   app.post('/auth/logout', authenticated, async (request, reply) => {
-    await auth.logout(request.token);
+    auth.logout(request.token);
     return reply.code(204).send();
   });
   app.get('/auth/me', authenticated, (request) => contaDe(request.user));
