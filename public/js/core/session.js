@@ -18,12 +18,27 @@ function safeStorage(kind) {
 /**
  * Sessão do usuário no navegador.
  * "Lembrar-me" guarda no localStorage; caso contrário, apenas enquanto a aba estiver aberta.
- * Somente o token e dados não sensíveis do usuário são armazenados.
+ * Guarda o access token (curto, ~1h), o refresh token (para renovar sem novo login)
+ * e dados não sensíveis do usuário.
  */
-export function saveSession({ token, usuario }, remember) {
+export function saveSession({ token, refreshToken, usuario }, remember) {
   clearSession();
   const storage = safeStorage(remember ? 'local' : 'session');
-  storage?.setItem(SESSION_KEY, JSON.stringify({ token, usuario }));
+  storage?.setItem(SESSION_KEY, JSON.stringify({ token, refreshToken, usuario }));
+}
+
+/** Troca os tokens após uma renovação, mantendo o mesmo local de armazenamento. */
+export function updateSessionTokens({ token, refreshToken }) {
+  for (const kind of ['session', 'local']) {
+    const storage = safeStorage(kind);
+    const raw = storage?.getItem(SESSION_KEY);
+    if (!raw) continue;
+    try {
+      storage.setItem(SESSION_KEY, JSON.stringify({ ...JSON.parse(raw), token, refreshToken }));
+    } catch {
+      /* sessão corrompida: ignora */
+    }
+  }
 }
 
 export function getSession() {
