@@ -255,11 +255,12 @@
       "id": "abe4aeae-6248-404e-be2d-ee5278bbc4ef",
       "barbeiroId": "ef75",
       "clienteId": null,
-      "servicoId": null,
+      "servicoId": "1",
       "data": "2024-10-01",
       "horarioInicio": "08:30",
       "horarioFim": "09:00",
-      "status": "Concluído"
+      "status": "Concluído",
+      "clienteNome": "Henrique"
     },
     {
       "id": "210f1181-58ba-4264-a42d-49239526cb06",
@@ -349,11 +350,12 @@
       "id": "6372b62f-cf8c-48dd-b831-bcdd144c3ae4",
       "barbeiroId": "1",
       "clienteId": null,
-      "servicoId": null,
+      "servicoId": "1",
       "data": "2024-10-01",
       "horarioInicio": "14:30",
       "horarioFim": "15:00",
-      "status": "Concluído"
+      "status": "Concluído",
+      "clienteNome": "Gustavo"
     },
     {
       "id": "3966b8a8-647b-4f95-994a-7da021c90b37",
@@ -411,21 +413,23 @@
       "id": "1aebb397-610e-473e-9cd9-7bbf6a69fc56",
       "barbeiroId": "ef75",
       "clienteId": null,
-      "servicoId": null,
+      "servicoId": "1",
       "data": "2024-10-31",
       "horarioInicio": "10:30",
       "horarioFim": "11:00",
-      "status": "Concluído"
+      "status": "Concluído",
+      "clienteNome": "Felipe"
     },
     {
       "id": "daddb521-a386-4f2d-8c6a-9208873029c8",
       "barbeiroId": "ef75",
       "clienteId": null,
-      "servicoId": null,
+      "servicoId": "1",
       "data": "2024-11-25",
       "horarioInicio": "08:00",
       "horarioFim": "08:30",
-      "status": "Concluído"
+      "status": "Concluído",
+      "clienteNome": "Thiago"
     },
     {
       "id": "46cafebc-0219-4e8f-a1cc-5dae79577d13",
@@ -562,11 +566,12 @@
       "id": "76182a41-2ae6-4fd9-8796-6a8817414f44",
       "barbeiroId": "ef75",
       "clienteId": null,
-      "servicoId": null,
+      "servicoId": "1",
       "data": "2024-12-02",
       "horarioInicio": "17:00",
       "horarioFim": "17:30",
-      "status": "Concluído"
+      "status": "Concluído",
+      "clienteNome": "Bruno"
     },
     {
       "id": "491cf2f9-7a9d-4cc6-98ba-8cdae164f1c5",
