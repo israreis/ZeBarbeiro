@@ -1,47 +1,44 @@
-import { after, before, beforeEach, describe, test } from 'node:test';
+import { beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp } from '../server/app.js';
-import { JsonStore } from '../server/db/store.js';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
-import { hashPassword } from '../server/auth/password.js';
+import { buildApp } from '../server/app.js';
+import { baseConfig } from '../server/config.js';
+import {
+  createMemoryIdentity, createMemoryPhotoStorage, createMemoryRepositories,
+} from './support/memory-adapters.js';
 
 const SENHA = 'senha-forte-1';
 const HOJE = { date: '2026-11-05', time: '10:00' }; // quinta-feira
 
-const uploadsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'barberapp-uploads-'));
 const PNG_1X1 = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64',
 );
 
 const testConfig = {
-  uploadsDir,
+  ...baseConfig,
   maxUploadBytes: 1024 * 1024,
-  publicDir: new URL('../public', import.meta.url).pathname,
-  sessionTtlMs: 60_000,
-  maxBodyBytes: 64 * 1024,
   timeZone: 'America/Sao_Paulo',
   loginRateLimit: { maxAttempts: 3, windowMs: 60_000 },
+  apiRateLimitPerMinute: 10_000,
+  supabase: { url: 'https://projeto.supabase.co' },
 };
 
-let senhaHash;
-let server;
-let baseUrl;
-let store;
+let app;
+let repos;
+let identity;
+let photos;
 
-async function buildFixture() {
-  const usuario = (id, perfil, email) => ({
-    id, nome: `Usuário ${id}`, email, telefone: '(31)99999-0000', dataNascimento: '', perfil, senhaHash,
+function buildFixture() {
+  const perfil = (id, tipo, email) => ({
+    id, nome: `Usuário ${id}`, email, telefone: '(31)99999-0000', dataNascimento: '1990-01-01', perfil: tipo,
   });
   return {
-    usuarios: [
-      usuario('adm', 'administrador', 'adm@teste.com'),
-      usuario('b1', 'barbeiro', 'b1@teste.com'),
-      usuario('b2', 'barbeiro', 'b2@teste.com'),
-      usuario('c1', 'cliente', 'c1@teste.com'),
-      usuario('c2', 'cliente', 'c2@teste.com'),
+    perfis: [
+      perfil('adm', 'administrador', 'adm@teste.com'),
+      perfil('b1', 'barbeiro', 'b1@teste.com'),
+      perfil('b2', 'barbeiro', 'b2@teste.com'),
+      perfil('c1', 'cliente', 'c1@teste.com'),
+      perfil('c2', 'cliente', 'c2@teste.com'),
     ],
     barbeiros: [
       {
@@ -59,49 +56,50 @@ async function buildFixture() {
     ],
     agendamentos: [
       {
-        id: 'a-c2', barbeiroId: 'b1', clienteId: 'c2', servicoId: 's1', data: '2026-11-06',
+        id: 'a-c2', barbeiroId: 'b1', clienteId: 'c2', servicoId: 's1', valor: 50, data: '2026-11-06',
         horarioInicio: '09:00', horarioFim: '09:30', status: 'Agendado',
       },
       {
-        id: 'a-hoje', barbeiroId: 'b1', clienteId: 'c1', servicoId: 's1', data: '2026-11-05',
+        id: 'a-hoje', barbeiroId: 'b1', clienteId: 'c1', servicoId: 's1', valor: 50, data: '2026-11-05',
         horarioInicio: '08:00', horarioFim: '08:30', status: 'Agendado',
       },
     ],
   };
 }
 
-async function api(method, path, { token, body } = {}) {
-  const headers = {};
-  if (token) headers.authorization = `Bearer ${token}`;
-  if (body !== undefined) headers['content-type'] = 'application/json';
-  const res = await fetch(`${baseUrl}${path}`, {
-    method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+/** Faz uma requisição à API sem abrir porta (Fastify inject). */
+async function api(method, url, { token, body, headers = {}, raw } = {}) {
+  const res = await app.inject({
+    method,
+    url,
+    headers: {
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+      ...headers,
+    },
+    payload: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
   });
-  const text = await res.text();
-  return { status: res.status, body: text ? JSON.parse(text) : null, headers: res.headers };
+  const isJson = (res.headers['content-type'] ?? '').startsWith('application/json');
+  return {
+    status: res.statusCode, body: isJson && res.body ? res.json() : null, headers: res.headers, raw: res.rawPayload,
+  };
 }
 
-async function login(email) {
-  const res = await api('POST', '/api/auth/login', { body: { email, senha: SENHA } });
+async function login(email, senha = SENHA) {
+  const res = await api('POST', '/api/auth/login', { body: { email, senha } });
   assert.equal(res.status, 200, JSON.stringify(res.body));
   return res.body.token;
 }
 
-before(async () => {
-  senhaHash = await hashPassword(SENHA);
-});
-
 beforeEach(async () => {
-  if (server) await new Promise((resolve) => server.close(resolve));
-  store = JsonStore.inMemory(await buildFixture());
-  ({ server } = createApp({ store, config: testConfig, clock: () => HOJE, logger: { error() {} } }));
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  baseUrl = `http://127.0.0.1:${server.address().port}`;
-});
-
-after(async () => {
-  await new Promise((resolve) => server.close(resolve));
-  await fs.rm(uploadsDir, { recursive: true, force: true });
+  if (app) await app.close();
+  const fixture = buildFixture();
+  repos = createMemoryRepositories(fixture);
+  identity = createMemoryIdentity(fixture.perfis.map((p) => ({ id: p.id, email: p.email, senha: SENHA })));
+  photos = createMemoryPhotoStorage();
+  app = await buildApp({
+    repos, identity, photos, config: testConfig, clock: () => HOJE,
+  });
 });
 
 describe('autenticação', () => {
@@ -109,6 +107,7 @@ describe('autenticação', () => {
     const res = await api('POST', '/api/auth/login', { body: { email: 'C1@Teste.com', senha: SENHA } });
     assert.equal(res.status, 200);
     assert.ok(res.body.token);
+    assert.ok(res.body.refreshToken);
     assert.equal(res.body.usuario.perfil, 'cliente');
     assert.equal(res.body.usuario.senhaHash, undefined);
   });
@@ -130,6 +129,16 @@ describe('autenticação', () => {
     assert.equal((await api('GET', '/api/auth/me', { token })).status, 401);
   });
 
+  test('refresh token renova a sessão e o token antigo deixa de valer', async () => {
+    const { body: sessao } = await api('POST', '/api/auth/login', { body: { email: 'c1@teste.com', senha: SENHA } });
+    const renovada = await api('POST', '/api/auth/refresh', { body: { refreshToken: sessao.refreshToken } });
+    assert.equal(renovada.status, 200);
+    assert.notEqual(renovada.body.token, sessao.token);
+    assert.equal((await api('GET', '/api/auth/me', { token: renovada.body.token })).status, 200);
+    assert.equal((await api('GET', '/api/auth/me', { token: sessao.token })).status, 401);
+    assert.equal((await api('POST', '/api/auth/refresh', { body: { refreshToken: 'invalido' } })).status, 401);
+  });
+
   test('cadastro de cliente valida dados e impede e-mail duplicado', async () => {
     const dados = {
       nome: 'Novo', email: 'novo@teste.com', senha: 'abcdefgh', telefone: '31988887777', dataNascimento: '2000-05-10',
@@ -138,6 +147,7 @@ describe('autenticação', () => {
     assert.equal(criado.status, 201);
     assert.equal(criado.body.perfil, 'cliente');
     assert.equal(criado.body.telefone, '(31)98888-7777');
+    assert.equal((await api('POST', '/api/auth/login', { body: { email: 'novo@teste.com', senha: 'abcdefgh' } })).status, 200);
 
     assert.equal((await api('POST', '/api/clientes', { body: { ...dados, email: 'NOVO@teste.com' } })).status, 409);
     assert.equal((await api('POST', '/api/clientes', { body: { ...dados, email: 'x@teste.com', senha: '123' } })).status, 422);
@@ -238,61 +248,90 @@ describe('autorização por perfil', () => {
     assert.equal(res.body.senhaHash, undefined);
     assert.equal(res.body.ativo, true);
 
+    assert.equal((await api('POST', '/api/auth/login', { body: { email: 'bn@teste.com', senha: 'abcdefgh' } })).status, 200);
+
+    const usuariosAntes = identity.users.size;
     const invalido = await api('POST', '/api/barbeiros', { token, body: { ...novo, email: 'b2@teste.com' } });
     assert.equal(invalido.status, 409);
-    assert.equal(store.snapshot.usuarios.filter((u) => u.email === 'b2@teste.com').length, 1);
+    assert.equal(repos.tables.perfis.filter((u) => u.email === 'b2@teste.com').length, 1);
+    assert.equal(identity.users.size, usuariosAntes, 'nenhum login órfão no Auth');
 
     const servicoInexistente = await api('POST', '/api/barbeiros', {
       token, body: { ...novo, email: 'outro@teste.com', servicoIds: ['nao-existe'] },
     });
     assert.equal(servicoInexistente.status, 422);
   });
+
+  test('cadastro desfaz o login criado no Auth se o perfil não puder ser salvo', async () => {
+    const insert = repos.perfis.insert;
+    repos.perfis.insert = async () => { throw new Error('falha simulada no banco'); };
+    const usuariosAntes = identity.users.size;
+    const res = await api('POST', '/api/clientes', {
+      body: {
+        nome: 'Z', email: 'z@teste.com', senha: 'abcdefgh', telefone: '31988887777', dataNascimento: '2000-05-10',
+      },
+    });
+    repos.perfis.insert = insert;
+    assert.equal(res.status, 500);
+    assert.equal(res.body.erro, 'Erro interno do servidor.', 'detalhes internos não vazam');
+    assert.equal(identity.users.size, usuariosAntes);
+  });
+
+  test('administrador redefine a senha do barbeiro e encerra as sessões dele', async () => {
+    const sessaoBarbeiro = await login('b1@teste.com');
+    const admin = await login('adm@teste.com');
+    const atual = (await api('GET', '/api/barbeiros/b1', { token: admin })).body;
+    const res = await api('PUT', '/api/barbeiros/b1', {
+      token: admin,
+      body: {
+        ...atual, servicoIds: atual.servicoIds, novaSenha: 'senha-nova-123', nome: 'Barbeiro Renomeado',
+      },
+    });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.nome, 'Barbeiro Renomeado');
+    assert.equal((await api('GET', '/api/auth/me', { token: sessaoBarbeiro })).status, 401);
+    await login('b1@teste.com', 'senha-nova-123');
+  });
 });
 
 describe('foto do barbeiro', () => {
-  const upload = (token, body, contentType = 'image/png') => fetch(`${baseUrl}/api/barbeiros/b1/foto`, {
-    method: 'PUT', headers: { authorization: `Bearer ${token}`, 'content-type': contentType }, body,
+  const upload = (token, payload, url = '/api/barbeiros/b1/foto', contentType = 'image/png') => api('PUT', url, {
+    token, headers: { 'content-type': contentType }, raw: payload,
   });
 
-  test('administrador envia, substitui e remove a foto; qualquer pessoa pode vê-la', async () => {
+  test('administrador envia, substitui e remove a foto; clientes recebem a URL pública', async () => {
     const token = await login('adm@teste.com');
     const res = await upload(token, PNG_1X1);
-    assert.equal(res.status, 200);
-    const { fotoUrl } = await res.json();
-    assert.match(fotoUrl, /^\/api\/barbeiros\/b1\/foto\?v=/);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    const { fotoUrl } = res.body;
+    assert.match(fotoUrl, /^https:\/\/storage\.teste\/fotos-barbeiros\/barbeiros\/[0-9a-f-]{36}\.png$/);
 
-    const imagem = await fetch(`${baseUrl}${fotoUrl}`);
-    assert.equal(imagem.status, 200);
-    assert.equal(imagem.headers.get('content-type'), 'image/png');
-    assert.deepEqual(Buffer.from(await imagem.arrayBuffer()), PNG_1X1);
-
-    const nova = await (await upload(token, PNG_1X1)).json();
+    const nova = (await upload(token, PNG_1X1)).body;
     assert.notEqual(nova.fotoUrl, fotoUrl, 'nova foto gera nova URL');
-    assert.equal((await fs.readdir(uploadsDir)).length, 1, 'arquivo anterior é apagado');
+    assert.equal(photos.files.size, 1, 'arquivo anterior é apagado');
 
     const cliente = await login('c1@teste.com');
     const lista = await api('GET', '/api/barbeiros', { token: cliente });
     assert.equal(lista.body[0].fotoUrl, nova.fotoUrl);
 
     assert.equal((await api('DELETE', '/api/barbeiros/b1/foto', { token })).status, 204);
-    assert.equal((await fetch(`${baseUrl}${nova.fotoUrl}`)).status, 404);
-    assert.equal((await fs.readdir(uploadsDir)).length, 0);
+    assert.equal(photos.files.size, 0);
+    assert.equal((await api('GET', '/api/barbeiros/b1', { token })).body.fotoUrl, null);
   });
 
   test('rejeita arquivos que não são imagem, mesmo com Content-Type de imagem, e arquivos grandes', async () => {
     const token = await login('adm@teste.com');
     assert.equal((await upload(token, Buffer.from('<script>alert(1)</script>'))).status, 422);
     assert.equal((await upload(token, Buffer.alloc(2 * 1024 * 1024))).status, 413);
+    assert.equal((await upload(token, PNG_1X1, undefined, 'text/html')).status, 415);
   });
 
   test('barbeiro troca e remove a própria foto pela conta', async () => {
     const token = await login('b1@teste.com');
-    const res = await fetch(`${baseUrl}/api/auth/me/foto`, {
-      method: 'PUT', headers: { authorization: `Bearer ${token}`, 'content-type': 'image/png' }, body: PNG_1X1,
-    });
+    const res = await upload(token, PNG_1X1, '/api/auth/me/foto');
     assert.equal(res.status, 200);
-    const { fotoUrl } = await res.json();
-    assert.match(fotoUrl, /^\/api\/barbeiros\/b1\/foto/);
+    const { fotoUrl } = res.body;
+    assert.ok(fotoUrl);
     assert.equal((await api('GET', '/api/auth/me', { token })).body.fotoUrl, fotoUrl);
 
     assert.equal((await api('DELETE', '/api/auth/me/foto', { token })).status, 204);
@@ -302,7 +341,7 @@ describe('foto do barbeiro', () => {
     assert.equal((await api('DELETE', '/api/auth/me/foto', { token: cliente })).status, 403);
   });
 
-  test('somente o administrador pode enviar foto', async () => {
+  test('somente o administrador pode enviar foto de qualquer barbeiro', async () => {
     const token = await login('b1@teste.com');
     assert.equal((await upload(token, PNG_1X1)).status, 403);
   });
@@ -371,7 +410,18 @@ describe('agenda e agendamentos', () => {
       token, body: { barbeiroId: 'b1', servicoId: 's1', data: '2026-11-06', horarios: ['08:00', '09:00'] },
     });
     assert.equal(res.status, 409);
-    assert.equal(store.snapshot.agendamentos.length, 2);
+    assert.equal(repos.tables.agendamentos.length, 2);
+  });
+
+  test('o banco recusa reserva duplicada mesmo se a verificação prévia não perceber', async () => {
+    const token = await login('c1@teste.com');
+    const listOcupados = repos.agendamentos.listOcupados;
+    repos.agendamentos.listOcupados = async () => []; // simula a corrida entre consulta e INSERT
+    const res = await api('POST', '/api/agendamentos', {
+      token, body: { barbeiroId: 'b1', servicoId: 's1', data: '2026-11-06', horarios: ['09:00'] },
+    });
+    repos.agendamentos.listOcupados = listOcupados;
+    assert.equal(res.status, 409);
   });
 
   test('reservas simultâneas do mesmo horário não geram duplicidade', async () => {
@@ -484,17 +534,16 @@ describe('relatórios', () => {
 
   test('exporta PDF e Excel', async () => {
     const token = await login('adm@teste.com');
-    const headers = { authorization: `Bearer ${token}` };
 
-    const pdf = await fetch(`${baseUrl}/api/relatorios/pdf${periodo}`, { headers });
+    const pdf = await api('GET', `/api/relatorios/pdf${periodo}`, { token });
     assert.equal(pdf.status, 200);
-    assert.equal(pdf.headers.get('content-type'), 'application/pdf');
-    assert.match(pdf.headers.get('content-disposition'), /attachment; filename="relatorio-ze-barbeiro-2026-11-01-a-2026-11-30\.pdf"/);
-    assert.equal(Buffer.from(await pdf.arrayBuffer()).subarray(0, 5).toString(), '%PDF-');
+    assert.equal(pdf.headers['content-type'], 'application/pdf');
+    assert.match(pdf.headers['content-disposition'], /attachment; filename="relatorio-ze-barbeiro-2026-11-01-a-2026-11-30\.pdf"/);
+    assert.equal(pdf.raw.subarray(0, 5).toString(), '%PDF-');
 
-    const xlsx = await fetch(`${baseUrl}/api/relatorios/xlsx${periodo}`, { headers });
+    const xlsx = await api('GET', `/api/relatorios/xlsx${periodo}`, { token });
     assert.equal(xlsx.status, 200);
-    assert.equal(Buffer.from(await xlsx.arrayBuffer()).subarray(0, 2).toString(), 'PK');
+    assert.equal(xlsx.raw.subarray(0, 2).toString(), 'PK');
   });
 
   test('valida o período', async () => {
@@ -506,33 +555,40 @@ describe('relatórios', () => {
 
 describe('servidor HTTP', () => {
   test('envia cabeçalhos de segurança e serve apenas arquivos públicos', async () => {
-    const pagina = await fetch(`${baseUrl}/`);
+    const pagina = await api('GET', '/');
     assert.equal(pagina.status, 200);
-    assert.match(pagina.headers.get('content-security-policy'), /default-src 'self'/);
-    assert.equal(pagina.headers.get('x-content-type-options'), 'nosniff');
+    const csp = pagina.headers['content-security-policy'];
+    assert.match(csp, /default-src 'self'/);
+    assert.match(csp, /img-src 'self' data: blob: https:\/\/projeto\.supabase\.co/);
+    assert.equal(pagina.headers['x-content-type-options'], 'nosniff');
+    assert.equal(pagina.headers['x-frame-options'], 'DENY');
 
-    for (const path of ['/../data/seed.json', '/%2e%2e/package.json', '/%2e%2e%2fserver/config.js']) {
-      assert.equal((await fetch(`${baseUrl}${path}`)).status, 404, path);
+    for (const path of ['/../data/seed.json', '/%2e%2e/package.json', '/%2e%2e%2fserver/config.js', '/.env']) {
+      assert.ok([403, 404].includes((await api('GET', path)).status), path);
     }
   });
 
   test('CSS e JS são revalidados a cada acesso (ETag) para não usar versão antiga', async () => {
-    const primeira = await fetch(`${baseUrl}/css/base.css`);
+    const primeira = await api('GET', '/css/base.css');
     assert.equal(primeira.status, 200);
-    assert.equal(primeira.headers.get('cache-control'), 'no-cache');
-    const etag = primeira.headers.get('etag');
+    assert.equal(primeira.headers['cache-control'], 'no-cache');
+    const { etag } = primeira.headers;
     assert.ok(etag);
 
-    const revalidacao = await fetch(`${baseUrl}/css/base.css`, { headers: { 'if-none-match': etag } });
+    const revalidacao = await api('GET', '/css/base.css', { headers: { 'if-none-match': etag } });
     assert.equal(revalidacao.status, 304);
   });
 
+  test('respostas da API não são guardadas em cache', async () => {
+    const token = await login('c1@teste.com');
+    assert.equal((await api('GET', '/api/auth/me', { token })).headers['cache-control'], 'no-store');
+  });
+
   test('rejeita JSON inválido e rotas inexistentes', async () => {
-    const invalido = await fetch(`${baseUrl}/api/auth/login`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: '{',
-    });
+    const invalido = await api('POST', '/api/auth/login', { headers: { 'content-type': 'application/json' }, raw: '{' });
     assert.equal(invalido.status, 400);
+    assert.equal(invalido.body.erro, 'O corpo da requisição não é um JSON válido.');
     assert.equal((await api('GET', '/api/nao-existe')).status, 404);
-    assert.equal((await api('DELETE', '/api/servicos')).status, 405);
+    assert.equal((await api('DELETE', '/api/servicos')).status, 404);
   });
 });

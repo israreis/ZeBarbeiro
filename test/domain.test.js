@@ -4,10 +4,11 @@ import {
   isPast, isValidIsoDate, isValidTime, nowInTimeZone, weekdayOf,
 } from '../server/domain/time.js';
 import { STATUS, findOccupant, generateSlots, slotEnd } from '../server/domain/agenda.js';
-import { hashPassword, verifyPassword } from '../server/auth/password.js';
-import { SessionStore } from '../server/auth/sessions.js';
 import { RateLimiter } from '../server/auth/rate-limiter.js';
-import * as v from '../server/validation.js';
+import { detectImageType } from '../server/infra/image-type.js';
+import {
+  barbeiroSchema, cadastroClienteSchema, parse, servicoSchema,
+} from '../server/schemas.js';
 
 test('generateSlots respeita minutos e não ultrapassa o fim do expediente', () => {
   assert.deepEqual(generateSlots('16:00', '19:00'), ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30']);
@@ -51,28 +52,6 @@ test('findOccupant ignora agendamentos cancelados', () => {
   assert.ok(findOccupant([{ ...base, status: STATUS.BLOQUEADO }], slot));
 });
 
-test('hash de senha é salgado e verificável', async () => {
-  const a = await hashPassword('segredo123');
-  const b = await hashPassword('segredo123');
-  assert.notEqual(a, b);
-  assert.ok(await verifyPassword('segredo123', a));
-  assert.ok(!(await verifyPassword('outra-senha', a)));
-  assert.ok(!(await verifyPassword('segredo123', 'texto-puro')));
-});
-
-test('sessões expiram e podem ser revogadas por usuário', () => {
-  let now = 0;
-  const sessions = new SessionStore({ ttlMs: 1000, now: () => now });
-  const t1 = sessions.create('u1');
-  const t2 = sessions.create('u1');
-  assert.equal(sessions.resolve(t1), 'u1');
-  sessions.revokeUser('u1', t2);
-  assert.equal(sessions.resolve(t1), null);
-  assert.equal(sessions.resolve(t2), 'u1');
-  now = 1000;
-  assert.equal(sessions.resolve(t2), null);
-});
-
 test('rate limiter bloqueia após o limite e libera após a janela', () => {
   let now = 0;
   const limiter = new RateLimiter({ maxAttempts: 2, windowMs: 100, now: () => now });
@@ -84,11 +63,45 @@ test('rate limiter bloqueia após o limite e libera após a janela', () => {
   assert.ok(!limiter.isBlocked('k'));
 });
 
-test('validadores normalizam entradas', () => {
-  assert.equal(v.email('  Fulano@Exemplo.COM '), 'fulano@exemplo.com');
-  assert.equal(v.phone('31 97144 8208'), '(31)97144-8208');
-  assert.equal(v.phone('3133311811'), '(31)3331-1811');
-  assert.equal(v.positiveNumber('49,99', 'valor'), 49.99);
-  assert.throws(() => v.password('1234567'), /pelo menos 8/);
-  assert.throws(() => v.phone('1234'), /telefone válido/);
+const cliente = {
+  nome: '  Fulano  ', email: '  Fulano@Exemplo.COM ', telefone: '31 97144 8208', dataNascimento: '2000-01-01', senha: 'abcdefgh',
+};
+
+test('esquemas normalizam entradas e descartam campos desconhecidos', () => {
+  const dados = parse(cadastroClienteSchema('2026-11-05'), { ...cliente, perfil: 'administrador' });
+  assert.equal(dados.nome, 'Fulano');
+  assert.equal(dados.email, 'fulano@exemplo.com');
+  assert.equal(dados.telefone, '(31)97144-8208');
+  assert.equal(dados.perfil, undefined);
+  assert.equal(parse(cadastroClienteSchema('2026-11-05'), { ...cliente, telefone: '3133311811' }).telefone, '(31)3331-1811');
+  assert.equal(parse(servicoSchema, { nome: 'Corte', valor: '49,99', duracaoMinutos: '30' }).valor, 49.99);
+});
+
+test('esquemas devolvem mensagens claras (422)', () => {
+  const erro = (fn) => {
+    try {
+      fn();
+    } catch (error) {
+      return error;
+    }
+    assert.fail('deveria ter lançado erro');
+  };
+  const hoje = '2026-11-05';
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, senha: '1234567' })).message, /pelo menos 8/);
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, telefone: '1234' })).message, /telefone válido/);
+  assert.match(erro(() => parse(cadastroClienteSchema(hoje), { ...cliente, dataNascimento: '2010-11-06' })).message, /responsável/);
+  assert.equal(erro(() => parse(cadastroClienteSchema(hoje), {})).status, 422);
+
+  const barbeiro = {
+    ...cliente, servicoIds: ['s1'], diasDisponiveis: ['sexta', 'segunda'], horarioInicial: '08:00', horarioFinal: '08:15',
+  };
+  assert.match(erro(() => parse(barbeiroSchema(hoje, ['s1'], { criacao: true }), barbeiro)).message, /30 minutos/);
+  const ok = parse(barbeiroSchema(hoje, ['s1'], { criacao: true }), { ...barbeiro, horarioFinal: '12:00' });
+  assert.deepEqual(ok.diasDisponiveis, ['segunda', 'sexta'], 'dias ordenados');
+});
+
+test('fotos são reconhecidas pelo conteúdo, não pelo tipo informado', () => {
+  const png = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
+  assert.deepEqual(detectImageType(png), { ext: 'png', contentType: 'image/png' });
+  assert.equal(detectImageType(Buffer.from('<svg onload=alert(1)>    ')), null);
 });

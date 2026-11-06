@@ -16,4 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+      # Troque por "npm ci" depois de commitar o package-lock.json.
+      - run: npm install --no-audit --no-fund
+      # Os testes usam adaptadores em memória: não precisam de Supabase nem de segredos.
       - run: npm test
