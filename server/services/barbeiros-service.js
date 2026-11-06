@@ -1,173 +1,120 @@
-import crypto from 'node:crypto';
-import { conflict, notFound, unprocessable } from '../http/errors.js';
-import { hashPassword } from '../auth/password.js';
-import { ROLES, toPublicUser } from '../domain/roles.js';
-import { WEEKDAYS, timeToMinutes } from '../domain/time.js';
-import { SLOT_MINUTES } from '../domain/agenda.js';
-import * as v from '../validation.js';
-import { createPhotoStorage } from './photo-storage.js';
-import { fotoUrl } from '../domain/barbeiro.js';
+import { conflict, notFound } from '../http/errors.js';
+import { ROLES } from '../domain/roles.js';
+import { barbeiroSchema, parse } from '../schemas.js';
 
-function parseDadosPessoais(body, today) {
-  return {
-    nome: v.requiredString(body?.nome, 'nome'),
-    email: v.email(body?.email),
-    telefone: v.phone(body?.telefone),
-    dataNascimento: v.birthDate(body?.dataNascimento, today),
-  };
-}
-
-function parseAgenda(body, servicosExistentes) {
-  const horarioInicial = v.time(body?.horarioInicial, 'horário inicial');
-  const horarioFinal = v.time(body?.horarioFinal, 'horário final');
-  if (timeToMinutes(horarioFinal) - timeToMinutes(horarioInicial) < SLOT_MINUTES) {
-    throw unprocessable(`O expediente deve terminar pelo menos ${SLOT_MINUTES} minutos após o início.`);
-  }
-  return {
-    ativo: body?.ativo === undefined ? true : v.boolean(body.ativo, 'ativo'),
-    servicoIds: v.stringArray(body?.servicoIds, 'serviços', {
-      allowed: servicosExistentes.map((s) => s.id),
-      minItems: 1,
-    }),
-    diasDisponiveis: v.stringArray(body?.diasDisponiveis, 'dias disponíveis', { allowed: WEEKDAYS, minItems: 1 })
-      .sort((a, b) => WEEKDAYS.indexOf(a) - WEEKDAYS.indexOf(b)),
-    horarioInicial,
-    horarioFinal,
-  };
-}
-
-function assertEmailDisponivel(db, email, ignoreId) {
-  if (db.usuarios.some((u) => u.id !== ignoreId && u.email === email)) {
-    throw conflict('Este e-mail já está cadastrado.');
-  }
-}
-
+/**
+ * Cadastro de barbeiros (administrador), listagem para clientes e fotos.
+ * O login do barbeiro é criado no Supabase Auth; perfil, expediente e serviços
+ * são gravados juntos pela função SQL `salvar_barbeiro`.
+ */
 export function createBarbeirosService({
-  store, sessions, uploadsDir, clock,
+  repos, identity, photos, clock,
 }) {
-  const photos = createPhotoStorage(uploadsDir);
+  const fotoUrl = (barbeiro) => photos.publicUrl(barbeiro.fotoPath);
 
-  const toAdminView = (barbeiro, db) => {
-    const usuario = db.usuarios.find((u) => u.id === barbeiro.id);
-    const { foto, ...dados } = barbeiro;
+  const toAdminView = (barbeiro, servicos) => {
+    const { fotoPath, ...dados } = barbeiro;
     return {
-      ...toPublicUser(usuario),
       ...dados,
+      perfil: ROLES.BARBEIRO,
       fotoUrl: fotoUrl(barbeiro),
       servicos: barbeiro.servicoIds
-        .map((id) => db.servicos.find((s) => s.id === id))
+        .map((id) => servicos.find((s) => s.id === id))
         .filter(Boolean)
         .map(({ id, nome }) => ({ id, nome })),
     };
   };
 
-  /** Visão reduzida para clientes: só barbeiros ativos e serviços ativos que eles oferecem. */
-  const toClienteView = (barbeiro, db) => ({
+  /** Visão reduzida para clientes: sem dados pessoais, só serviços ativos. */
+  const toClienteView = (barbeiro, servicos) => ({
     id: barbeiro.id,
-    nome: db.usuarios.find((u) => u.id === barbeiro.id)?.nome ?? '',
+    nome: barbeiro.nome,
     fotoUrl: fotoUrl(barbeiro),
     servicos: barbeiro.servicoIds
-      .map((id) => db.servicos.find((s) => s.id === id && s.ativo))
+      .map((id) => servicos.find((s) => s.id === id && s.ativo))
       .filter(Boolean),
   });
 
+  async function findOrFail(id) {
+    const barbeiro = await repos.barbeiros.findById(id);
+    if (!barbeiro) throw notFound('Barbeiro não encontrado.');
+    return barbeiro;
+  }
+
+  async function get(id) {
+    const [barbeiro, servicos] = await Promise.all([findOrFail(id), repos.servicos.list()]);
+    return toAdminView(barbeiro, servicos);
+  }
+
+  async function parseBarbeiro(body, { criacao }) {
+    const servicos = await repos.servicos.list();
+    const dados = parse(barbeiroSchema(clock().date, servicos.map((s) => s.id), { criacao }), body);
+    return { dados, servicos };
+  }
+
   return {
-    list(actor) {
-      const db = store.snapshot;
-      const barbeiros = db.barbeiros.filter((b) => db.usuarios.some((u) => u.id === b.id));
-      if (actor.perfil === ROLES.ADMIN) return barbeiros.map((b) => toAdminView(b, db));
-      return barbeiros.filter((b) => b.ativo).map((b) => toClienteView(b, db));
+    async list(actor) {
+      const [barbeiros, servicos] = await Promise.all([repos.barbeiros.list(), repos.servicos.list()]);
+      if (actor.perfil === ROLES.ADMIN) return barbeiros.map((b) => toAdminView(b, servicos));
+      return barbeiros.filter((b) => b.ativo).map((b) => toClienteView(b, servicos));
     },
 
-    get(id) {
-      const db = store.snapshot;
-      const barbeiro = db.barbeiros.find((b) => b.id === id);
-      if (!barbeiro) throw notFound('Barbeiro não encontrado.');
-      return toAdminView(barbeiro, db);
-    },
+    get,
 
     async create(body) {
-      const pessoais = parseDadosPessoais(body, clock().date);
-      const agenda = parseAgenda(body, store.snapshot.servicos);
-      const senhaHash = await hashPassword(v.password(body?.senha));
+      const { dados: { senha, ...dados }, servicos } = await parseBarbeiro(body, { criacao: true });
+      if (await repos.perfis.emailEmUso(dados.email)) throw conflict('Este e-mail já está cadastrado.');
 
-      return store.update((db) => {
-        assertEmailDisponivel(db, pessoais.email);
-        const id = crypto.randomUUID();
-        db.usuarios.push({ id, ...pessoais, senhaHash, perfil: ROLES.BARBEIRO });
-        db.barbeiros.push({ id, ...agenda });
-        return toAdminView(db.barbeiros.at(-1), db);
-      });
-    },
-
-    async update(id, body) {
-      const pessoais = parseDadosPessoais(body, clock().date);
-      const agenda = parseAgenda(body, store.snapshot.servicos);
-      const novaSenha = body?.novaSenha ? v.password(body.novaSenha, 'nova senha') : null;
-      const senhaHash = novaSenha ? await hashPassword(novaSenha) : null;
-
-      const atualizado = await store.update((db) => {
-        const barbeiro = db.barbeiros.find((b) => b.id === id);
-        const usuario = db.usuarios.find((u) => u.id === id);
-        if (!barbeiro || !usuario) throw notFound('Barbeiro não encontrado.');
-        assertEmailDisponivel(db, pessoais.email, id);
-
-        Object.assign(usuario, pessoais, senhaHash ? { senhaHash } : {});
-        Object.assign(barbeiro, agenda);
-        return toAdminView(barbeiro, db);
-      });
-
-      // Senha redefinida pelo administrador invalida as sessões abertas do barbeiro.
-      if (senhaHash) sessions.revokeUser(id);
-      return atualizado;
-    },
-
-    /** Salva (ou substitui) a foto do barbeiro. O arquivo anterior é apagado após a troca. */
-    async setFoto(id, buffer) {
-      if (!store.snapshot.barbeiros.some((b) => b.id === id)) throw notFound('Barbeiro não encontrado.');
-      const fileName = await photos.save(buffer);
-      let anterior;
+      const id = await identity.createUser({ email: dados.email, senha });
       try {
-        const atualizado = await store.update((db) => {
-          const barbeiro = db.barbeiros.find((b) => b.id === id);
-          if (!barbeiro) throw notFound('Barbeiro não encontrado.');
-          anterior = barbeiro.foto;
-          barbeiro.foto = fileName;
-          return toAdminView(barbeiro, db);
-        });
-        await photos.remove(anterior);
-        return atualizado;
+        return toAdminView(await repos.barbeiros.save({ id, ...dados }), servicos);
       } catch (error) {
-        await photos.remove(fileName);
+        // Compensação: remove o login criado se o cadastro não pôde ser salvo.
+        await identity.deleteUser(id).catch(() => {});
         throw error;
       }
     },
 
-    async removeFoto(id) {
+    async update(id, body) {
+      const atual = await findOrFail(id);
+      const { dados: { novaSenha, ...dados }, servicos } = await parseBarbeiro(body, { criacao: false });
+
+      if (dados.email !== atual.email) {
+        if (await repos.perfis.emailEmUso(dados.email, id)) throw conflict('Este e-mail já está cadastrado.');
+        await identity.updateUser(id, { email: dados.email });
+      }
+      if (novaSenha) {
+        await identity.updateUser(id, { senha: novaSenha });
+        // Senha redefinida pelo administrador encerra as sessões abertas do barbeiro.
+        await identity.revokeAllSessions(id);
+      }
+      return toAdminView(await repos.barbeiros.save({ id, ...dados }), servicos);
+    },
+
+    /** Salva (ou substitui) a foto. O arquivo anterior é apagado depois da troca. */
+    async setFoto(id, buffer) {
+      await findOrFail(id);
+      const novoPath = await photos.save(buffer);
       let anterior;
-      await store.update((db) => {
-        const barbeiro = db.barbeiros.find((b) => b.id === id);
-        if (!barbeiro) throw notFound('Barbeiro não encontrado.');
-        anterior = barbeiro.foto;
-        delete barbeiro.foto;
-      });
+      try {
+        anterior = await repos.barbeiros.setFotoPath(id, novoPath);
+      } catch (error) {
+        await photos.remove(novoPath);
+        throw error;
+      }
+      await photos.remove(anterior);
+      return get(id);
+    },
+
+    async removeFoto(id) {
+      const anterior = await repos.barbeiros.setFotoPath(id, null);
       await photos.remove(anterior);
     },
 
     /** URL da foto do barbeiro (ou null), usada nos dados da própria conta. */
-    fotoUrlOf(id) {
-      const barbeiro = store.snapshot.barbeiros.find((b) => b.id === id);
+    async fotoUrlOf(id) {
+      const barbeiro = await repos.barbeiros.findById(id);
       return barbeiro ? fotoUrl(barbeiro) : null;
-    },
-
-    async getFoto(id) {
-      const barbeiro = store.snapshot.barbeiros.find((b) => b.id === id);
-      if (!barbeiro?.foto) throw notFound('Foto não encontrada.');
-      try {
-        return await photos.read(barbeiro.foto);
-      } catch {
-        throw notFound('Foto não encontrada.');
-      }
     },
   };
 }

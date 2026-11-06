@@ -1,5 +1,4 @@
-import { Router } from './http/router.js';
-import { forbidden, unauthorized } from './http/errors.js';
+import { forbidden, unauthorized, unprocessable } from './http/errors.js';
 import { ROLES, toPublicUser } from './domain/roles.js';
 import { buildReportPdf } from './reports/report-pdf.js';
 import { buildReportXlsx } from './reports/report-xlsx.js';
@@ -7,140 +6,133 @@ import { buildReportXlsx } from './reports/report-xlsx.js';
 const { ADMIN, BARBEIRO, CLIENTE } = ROLES;
 const ANY_ROLE = [ADMIN, BARBEIRO, CLIENTE];
 
+const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function bearerToken(request) {
+  const header = request.headers.authorization ?? '';
+  return header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+}
+
+/** Corpo binário de upload de foto (o parser de imagens entrega um Buffer). */
+function imageBody(request) {
+  if (!Buffer.isBuffer(request.body)) throw unprocessable('Envie uma imagem JPG, PNG ou WEBP.');
+  return request.body;
+}
+
+/** Envia um arquivo para download (o nome é montado no servidor, sem dados do usuário). */
+function sendDownload(reply, { content, contentType, fileName }) {
+  return reply
+    .header('Content-Type', contentType)
+    .header('Content-Disposition', `attachment; filename="${fileName}"`)
+    .header('Cache-Control', 'no-store')
+    .send(content);
+}
+
 /**
- * Define as rotas da API e suas regras de acesso.
- * Cada rota recebe um `ctx` com { req, params, query, body, ip, token, user } e devolve
- * o corpo da resposta (status 200 por padrão; `ctx.status` permite alterá-lo).
+ * Rotas da API (prefixo /api) e suas regras de acesso.
+ * @param {import('fastify').FastifyInstance} app
  */
-export function buildRouter({ sessions, store, services }) {
+export async function apiRoutes(app, { services }) {
   const {
     auth, barbeiros, servicos, agendamentos, relatorios,
   } = services;
 
-  /** Middleware de autenticação/autorização baseado em perfil. */
-  const requireRole = (...roles) => (ctx) => {
-    const userId = sessions.resolve(ctx.token);
-    const user = userId && store.snapshot.usuarios.find((u) => u.id === userId);
+  app.decorateRequest('user', null);
+  app.decorateRequest('token', null);
+
+  /** preHandler de autenticação/autorização por perfil. */
+  const requireRole = (...roles) => async (request) => {
+    const token = bearerToken(request);
+    const user = token ? await auth.authenticate(token) : null;
     if (!user) throw unauthorized();
     if (!roles.includes(user.perfil)) throw forbidden();
-    ctx.user = user;
+    request.user = user;
+    request.token = token;
   };
-  const authenticated = requireRole(...ANY_ROLE);
-  const adminOnly = requireRole(ADMIN);
+  const authenticated = { preHandler: requireRole(...ANY_ROLE) };
+  const only = (...roles) => ({ preHandler: requireRole(...roles) });
 
   /** Dados da conta; barbeiros recebem também a URL da foto. */
-  const withFoto = (usuario) => (usuario.perfil === BARBEIRO
-    ? { ...usuario, fotoUrl: barbeiros.fotoUrlOf(usuario.id) }
-    : usuario);
-
-  /** Envia um arquivo para download (o nome é montado no servidor, sem dados do usuário). */
-  const sendDownload = (ctx, { content, contentType, fileName }) => {
-    ctx.res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': content.length,
-      'Content-Disposition': `attachment; filename="${fileName}"`,
-      'Cache-Control': 'no-store',
-    });
-    ctx.res.end(content);
-    ctx.handled = true;
+  const contaDe = async (usuario) => {
+    const publico = toPublicUser(usuario);
+    return usuario.perfil === BARBEIRO ? { ...publico, fotoUrl: await barbeiros.fotoUrlOf(usuario.id) } : publico;
   };
 
   /** Relatório no escopo do usuário; a visão por barbeiro só aparece para o administrador sem filtro. */
-  const gerarRelatorio = (ctx) => {
-    const report = relatorios.gerar(ctx.user, ctx.query);
-    const mostrarBarbeiros = ctx.user.perfil === ADMIN && !report.barbeiro;
-    const fileName = `relatorio-ze-barbeiro-${report.periodo.inicio}-a-${report.periodo.fim}`;
-    return { report, mostrarBarbeiros, fileName };
+  const gerarRelatorio = async (request) => {
+    const report = await relatorios.gerar(request.user, request.query);
+    return {
+      report,
+      mostrarBarbeiros: request.user.perfil === ADMIN && !report.barbeiro,
+      fileName: `relatorio-ze-barbeiro-${report.periodo.inicio}-a-${report.periodo.fim}`,
+    };
   };
 
-  const created = (ctx, value) => {
-    ctx.status = 201;
-    return value;
-  };
-  const noContent = (ctx) => {
-    ctx.status = 204;
-  };
+  // ---- Autenticação e conta ----
+  app.post('/auth/login', (request) => auth.login(request.body, request.ip));
+  app.post('/auth/refresh', (request) => auth.refresh(request.body));
+  app.post('/auth/logout', authenticated, async (request, reply) => {
+    await auth.logout(request.token);
+    return reply.code(204).send();
+  });
+  app.get('/auth/me', authenticated, (request) => contaDe(request.user));
+  app.put('/auth/me', authenticated, async (request) => contaDe(await auth.updateProfile(request.user, request.body, request.token)));
+  app.put('/auth/senha', authenticated, async (request, reply) => {
+    await auth.changePassword(request.user, request.body, request.token);
+    return reply.code(204).send();
+  });
+  // O barbeiro gerencia a própria foto pela página Minha conta.
+  app.put('/auth/me/foto', only(BARBEIRO), async (request) => {
+    await barbeiros.setFoto(request.user.id, imageBody(request));
+    return contaDe(request.user);
+  });
+  app.delete('/auth/me/foto', only(BARBEIRO), async (request, reply) => {
+    await barbeiros.removeFoto(request.user.id);
+    return reply.code(204).send();
+  });
+  app.post('/clientes', async (request, reply) => reply.code(201).send(await auth.registerCliente(request.body)));
 
-  return new Router()
-    // Autenticação e conta
-    .post('/api/auth/login', (ctx) => auth.login(ctx.body, ctx.ip))
-    .post('/api/auth/logout', authenticated, (ctx) => {
-      auth.logout(ctx.token);
-      noContent(ctx);
-    })
-    .get('/api/auth/me', authenticated, (ctx) => withFoto(toPublicUser(ctx.user)))
-    .put('/api/auth/me', authenticated, async (ctx) => withFoto(await auth.updateProfile(ctx.user, ctx.body, ctx.token)))
-    // O barbeiro gerencia a própria foto pela página Minha conta.
-    .put('/api/auth/me/foto', { rawBody: true }, requireRole(BARBEIRO), async (ctx) => {
-      await barbeiros.setFoto(ctx.user.id, await ctx.readRawBody());
-      return withFoto(toPublicUser(ctx.user));
-    })
-    .delete('/api/auth/me/foto', requireRole(BARBEIRO), async (ctx) => {
-      await barbeiros.removeFoto(ctx.user.id);
-      noContent(ctx);
-    })
-    .put('/api/auth/senha', authenticated, async (ctx) => {
-      await auth.changePassword(ctx.user, ctx.body, ctx.token);
-      noContent(ctx);
-    })
-    .post('/api/clientes', async (ctx) => created(ctx, await auth.registerCliente(ctx.body)))
+  // ---- Cadastros administrativos ----
+  app.get('/barbeiros', authenticated, (request) => barbeiros.list(request.user));
+  app.get('/barbeiros/:id', only(ADMIN), (request) => barbeiros.get(request.params.id));
+  app.post('/barbeiros', only(ADMIN), async (request, reply) => reply.code(201).send(await barbeiros.create(request.body)));
+  app.put('/barbeiros/:id', only(ADMIN), (request) => barbeiros.update(request.params.id, request.body));
+  app.put('/barbeiros/:id/foto', only(ADMIN), (request) => barbeiros.setFoto(request.params.id, imageBody(request)));
+  app.delete('/barbeiros/:id/foto', only(ADMIN), async (request, reply) => {
+    await barbeiros.removeFoto(request.params.id);
+    return reply.code(204).send();
+  });
 
-    // Cadastros administrativos
-    .get('/api/barbeiros', authenticated, (ctx) => barbeiros.list(ctx.user))
-    .get('/api/barbeiros/:id', adminOnly, (ctx) => barbeiros.get(ctx.params.id))
-    .post('/api/barbeiros', adminOnly, async (ctx) => created(ctx, await barbeiros.create(ctx.body)))
-    .put('/api/barbeiros/:id', adminOnly, (ctx) => barbeiros.update(ctx.params.id, ctx.body))
-    .put('/api/barbeiros/:id/foto', { rawBody: true }, adminOnly,
-      async (ctx) => barbeiros.setFoto(ctx.params.id, await ctx.readRawBody()))
-    .delete('/api/barbeiros/:id/foto', adminOnly, async (ctx) => {
-      await barbeiros.removeFoto(ctx.params.id);
-      noContent(ctx);
-    })
-    // Pública: fotos aparecem para clientes e são carregadas por <img>, que não envia o token.
-    .get('/api/barbeiros/:id/foto', async (ctx) => {
-      const { content, contentType } = await barbeiros.getFoto(ctx.params.id);
-      ctx.res.writeHead(200, {
-        'Content-Type': contentType,
-        'Content-Length': content.length,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Content-Disposition': 'inline',
-      });
-      ctx.res.end(content);
-      ctx.handled = true;
-    })
+  app.get('/servicos', authenticated, (request) => servicos.list(request.user));
+  app.post('/servicos', only(ADMIN), async (request, reply) => reply.code(201).send(await servicos.create(request.body)));
+  app.put('/servicos/:id', only(ADMIN), (request) => servicos.update(request.params.id, request.body));
 
-    .get('/api/servicos', authenticated, (ctx) => servicos.list(ctx.user))
-    .post('/api/servicos', adminOnly, async (ctx) => created(ctx, await servicos.create(ctx.body)))
-    .put('/api/servicos/:id', adminOnly, (ctx) => servicos.update(ctx.params.id, ctx.body))
+  // ---- Relatórios e painel (administrador: todos; barbeiro: apenas os próprios dados) ----
+  app.get('/relatorios', only(ADMIN, BARBEIRO), async (request) => (await gerarRelatorio(request)).report);
+  app.get('/relatorios/pdf', only(ADMIN, BARBEIRO), async (request, reply) => {
+    const { report, mostrarBarbeiros, fileName } = await gerarRelatorio(request);
+    return sendDownload(reply, {
+      content: await buildReportPdf(report, { mostrarBarbeiros }),
+      contentType: 'application/pdf',
+      fileName: `${fileName}.pdf`,
+    });
+  });
+  app.get('/relatorios/xlsx', only(ADMIN, BARBEIRO), async (request, reply) => {
+    const { report, mostrarBarbeiros, fileName } = await gerarRelatorio(request);
+    return sendDownload(reply, {
+      content: await buildReportXlsx(report, { mostrarBarbeiros }),
+      contentType: XLSX_TYPE,
+      fileName: `${fileName}.xlsx`,
+    });
+  });
 
-
-    // Relatórios e painel (administrador: todos os barbeiros; barbeiro: apenas os próprios dados)
-    .get('/api/relatorios', requireRole(ADMIN, BARBEIRO), (ctx) => gerarRelatorio(ctx).report)
-    .get('/api/relatorios/pdf', requireRole(ADMIN, BARBEIRO), (ctx) => {
-      const { report, mostrarBarbeiros, fileName } = gerarRelatorio(ctx);
-      sendDownload(ctx, {
-        content: buildReportPdf(report, { mostrarBarbeiros }),
-        contentType: 'application/pdf',
-        fileName: `${fileName}.pdf`,
-      });
-    })
-    .get('/api/relatorios/xlsx', requireRole(ADMIN, BARBEIRO), (ctx) => {
-      const { report, mostrarBarbeiros, fileName } = gerarRelatorio(ctx);
-      sendDownload(ctx, {
-        content: buildReportXlsx(report, { mostrarBarbeiros }),
-        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        fileName: `${fileName}.xlsx`,
-      });
-    })
-
-    // Agenda e atendimentos
-    .get('/api/agenda', requireRole(ADMIN, BARBEIRO), (ctx) => agendamentos.getAgenda(ctx.user, ctx.query))
-    .get('/api/disponibilidade', authenticated, (ctx) => agendamentos.disponibilidade(ctx.query))
-    .get('/api/agendamentos', authenticated, (ctx) => agendamentos.history(ctx.user, ctx.query))
-    .post('/api/agendamentos', requireRole(BARBEIRO, CLIENTE),
-      async (ctx) => created(ctx, await agendamentos.create(ctx.user, ctx.body)))
-    .patch('/api/agendamentos/:id/concluir', requireRole(BARBEIRO),
-      (ctx) => agendamentos.concluir(ctx.user, ctx.params.id))
-    .patch('/api/agendamentos/:id/cancelar', requireRole(BARBEIRO, CLIENTE),
-      (ctx) => agendamentos.cancelar(ctx.user, ctx.params.id));
+  // ---- Agenda e atendimentos ----
+  app.get('/agenda', only(ADMIN, BARBEIRO), (request) => agendamentos.getAgenda(request.user, request.query));
+  app.get('/disponibilidade', authenticated, (request) => agendamentos.disponibilidade(request.query));
+  app.get('/agendamentos', authenticated, (request) => agendamentos.history(request.user, request.query));
+  app.post('/agendamentos', only(BARBEIRO, CLIENTE),
+    async (request, reply) => reply.code(201).send(await agendamentos.create(request.user, request.body)));
+  app.patch('/agendamentos/:id/concluir', only(BARBEIRO), (request) => agendamentos.concluir(request.user, request.params.id));
+  app.patch('/agendamentos/:id/cancelar', only(BARBEIRO, CLIENTE),
+    (request) => agendamentos.cancelar(request.user, request.params.id));
 }

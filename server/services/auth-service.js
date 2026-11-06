@@ -1,109 +1,109 @@
-import crypto from 'node:crypto';
 import { conflict, tooManyRequests, unauthorized, unprocessable } from '../http/errors.js';
-import { dummyVerify, hashPassword, verifyPassword } from '../auth/password.js';
 import { ROLES, toPublicUser } from '../domain/roles.js';
-import * as v from '../validation.js';
-import { IDADE_MINIMA_CLIENTE, MENSAGEM_MENOR_DE_IDADE } from '../domain/clientes.js';
+import {
+  cadastroClienteSchema, loginSchema, parse, perfilSchema, refreshSchema, trocaSenhaSchema,
+} from '../schemas.js';
 
+/**
+ * Login, cadastro de clientes e manutenção da própria conta.
+ * Senhas e sessões ficam no Supabase Auth (`identity`); os dados exibidos, na tabela `perfis`.
+ */
 export function createAuthService({
-  store, sessions, loginLimiter, clock,
+  repos, identity, loginLimiter, clock,
 }) {
-  /** Nascimento obrigatório; clientes precisam ter a idade mínima. */
-  const parseNascimento = (value, perfil) => v.birthDate(value, clock().date, perfil === ROLES.CLIENTE
-    ? { minAge: IDADE_MINIMA_CLIENTE, minAgeMessage: MENSAGEM_MENOR_DE_IDADE }
-    : {});
+  /** Monta a resposta de sessão (tokens + usuário) a partir de uma sessão do Auth. */
+  async function sessionResponse(session) {
+    const perfil = await repos.perfis.findById(session.userId);
+    if (!perfil) {
+      // Usuário existe no Auth mas não na aplicação (ex.: criado manualmente no painel).
+      await identity.signOut(session.accessToken);
+      throw unauthorized('Conta sem cadastro na aplicação. Fale com a barbearia.');
+    }
+    return {
+      token: session.accessToken,
+      refreshToken: session.refreshToken,
+      expiraEm: session.expiresAt,
+      usuario: toPublicUser(perfil),
+    };
+  }
 
-  const findByEmail = (email) => store.snapshot.usuarios.find((u) => u.email === email);
+  async function exigirSenhaCorreta(usuario, senha, mensagem) {
+    if (!senha || !(await identity.verifyPassword(usuario.email, senha))) throw unprocessable(mensagem);
+  }
 
   return {
-    async login(body, clientIp) {
-      const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
-      const senha = typeof body?.senha === 'string' ? body.senha : '';
-      const limiterKey = `${clientIp}|${email}`;
+    /** Usuário dono do token, ou null se o token for inválido/expirado. */
+    async authenticate(token) {
+      const userId = await identity.verifyToken(token);
+      return userId ? repos.perfis.findById(userId) : null;
+    },
 
+    async login(body, clientIp) {
+      const { email, senha } = parse(loginSchema, body);
+      const limiterKey = `${clientIp}|${email}`;
       if (loginLimiter.isBlocked(limiterKey)) {
         throw tooManyRequests('Muitas tentativas de login. Aguarde alguns minutos e tente novamente.');
       }
 
-      const usuario = findByEmail(email);
-      const valid = usuario ? await verifyPassword(senha, usuario.senhaHash) : await dummyVerify(senha);
-      if (!valid) {
+      const session = email && senha ? await identity.signIn(email, senha) : null;
+      if (!session) {
         loginLimiter.registerFailure(limiterKey);
         throw unauthorized('E-mail ou senha inválidos.');
       }
-
       loginLimiter.reset(limiterKey);
-      return { token: sessions.create(usuario.id), usuario: toPublicUser(usuario) };
+      return sessionResponse(session);
+    },
+
+    async refresh(body) {
+      const { refreshToken } = parse(refreshSchema, body);
+      return sessionResponse(await identity.refresh(refreshToken));
     },
 
     logout(token) {
-      sessions.revoke(token);
+      return identity.signOut(token, 'local');
     },
 
+    /** Cadastro público: sempre cria um cliente (o perfil nunca vem do corpo da requisição). */
     async registerCliente(body) {
-      const dados = {
-        nome: v.requiredString(body?.nome, 'nome'),
-        email: v.email(body?.email),
-        telefone: v.phone(body?.telefone),
-        dataNascimento: parseNascimento(body?.dataNascimento, ROLES.CLIENTE),
-      };
-      const senha = v.password(body?.senha);
-      const senhaHash = await hashPassword(senha);
+      const { senha, ...dados } = parse(cadastroClienteSchema(clock().date), body);
+      if (await repos.perfis.emailEmUso(dados.email)) throw conflict('Este e-mail já está cadastrado.');
 
-      const usuario = await store.update((db) => {
-        if (db.usuarios.some((u) => u.email === dados.email)) {
-          throw conflict('Este e-mail já está cadastrado.');
-        }
-        const novo = { id: crypto.randomUUID(), ...dados, senhaHash, perfil: ROLES.CLIENTE };
-        db.usuarios.push(novo);
-        return novo;
-      });
-      return toPublicUser(usuario);
+      const id = await identity.createUser({ email: dados.email, senha });
+      try {
+        return toPublicUser(await repos.perfis.insert({ id, ...dados, perfil: ROLES.CLIENTE }));
+      } catch (error) {
+        // Compensação: não deixa um login "órfão" no Auth se o perfil não foi salvo.
+        await identity.deleteUser(id).catch(() => {});
+        throw error;
+      }
     },
 
     /**
-     * Atualiza os dados do próprio usuário. Perfil e senha não são alterados aqui.
-     * Trocar o e-mail (que é o login) exige confirmar a senha atual e encerra as outras sessões.
+     * Atualiza os dados do próprio usuário. Perfil (papel) e senha não mudam aqui.
+     * Trocar o e-mail (que é o login) exige a senha atual e encerra as outras sessões.
      */
     async updateProfile(usuario, body, currentToken) {
-      const dados = {
-        nome: v.requiredString(body?.nome, 'nome'),
-        email: v.email(body?.email),
-        telefone: v.phone(body?.telefone),
-        dataNascimento: parseNascimento(body?.dataNascimento, usuario.perfil),
-      };
-
+      const { senhaAtual, ...dados } = parse(perfilSchema(clock().date, usuario.perfil), body);
       const emailAlterado = dados.email !== usuario.email;
-      if (emailAlterado && !(await verifyPassword(String(body?.senhaAtual ?? ''), usuario.senhaHash))) {
-        throw unprocessable('Para alterar o e-mail, confirme sua senha atual.');
+
+      if (emailAlterado) {
+        await exigirSenhaCorreta(usuario, senhaAtual, 'Para alterar o e-mail, confirme sua senha atual.');
+        if (await repos.perfis.emailEmUso(dados.email, usuario.id)) throw conflict('Este e-mail já está cadastrado.');
+        await identity.updateUser(usuario.id, { email: dados.email });
       }
 
-      const atualizado = await store.update((db) => {
-        if (emailAlterado && db.usuarios.some((u) => u.id !== usuario.id && u.email === dados.email)) {
-          throw conflict('Este e-mail já está cadastrado.');
-        }
-        return Object.assign(db.usuarios.find((u) => u.id === usuario.id), dados);
-      });
-      if (emailAlterado) sessions.revokeUser(usuario.id, currentToken);
+      const atualizado = await repos.perfis.update(usuario.id, dados);
+      if (emailAlterado) await identity.signOut(currentToken, 'others');
       return toPublicUser(atualizado);
     },
 
     async changePassword(usuario, body, currentToken) {
-      const senhaAtual = typeof body?.senhaAtual === 'string' ? body.senhaAtual : '';
-      const novaSenha = v.password(body?.novaSenha, 'nova senha');
+      const { senhaAtual, novaSenha } = parse(trocaSenhaSchema, body);
+      await exigirSenhaCorreta(usuario, senhaAtual, 'A senha atual está incorreta.');
+      if (senhaAtual === novaSenha) throw unprocessable('A nova senha deve ser diferente da senha atual.');
 
-      if (!(await verifyPassword(senhaAtual, usuario.senhaHash))) {
-        throw unprocessable('A senha atual está incorreta.');
-      }
-      if (senhaAtual === novaSenha) {
-        throw unprocessable('A nova senha deve ser diferente da senha atual.');
-      }
-
-      const senhaHash = await hashPassword(novaSenha);
-      await store.update((db) => {
-        db.usuarios.find((u) => u.id === usuario.id).senhaHash = senhaHash;
-      });
-      sessions.revokeUser(usuario.id, currentToken);
+      await identity.updateUser(usuario.id, { senha: novaSenha });
+      await identity.signOut(currentToken, 'others');
     },
   };
 }

@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { PdfDocument } from './pdf-document.js';
+import PDFDocument from 'pdfkit';
 import { statusLabel } from '../domain/agenda.js';
 
 /** Identidade visual do site aplicada ao PDF (cores de public/css/base.css). */
@@ -39,17 +39,101 @@ function deltaText(atual, anterior, { invert = false } = {}) {
 }
 
 /**
+ * Pequena camada sobre o pdfkit com coordenadas a partir do canto superior esquerdo
+ * e texto sempre em uma linha (o conteúdo é ajustado antes com `fit`/`wrap`).
+ */
+function createCanvas(info) {
+  const doc = new PDFDocument({
+    size: 'A4', margin: 0, autoFirstPage: false, bufferPages: true, info,
+  });
+  const chunks = [];
+  doc.on('data', (chunk) => chunks.push(chunk));
+  const finished = new Promise((resolve, reject) => {
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+  });
+
+  const measure = (value, font, size) => doc.font(font).fontSize(size).widthOfString(String(value));
+
+  return {
+    width: 595.28,
+    height: 841.89,
+    get pageCount() {
+      return doc.bufferedPageRange().count;
+    },
+    addPage: () => doc.addPage(),
+    usePage: (index) => doc.switchToPage(doc.bufferedPageRange().start + index),
+
+    rect(x, y, w, h, { fill, stroke }) {
+      doc.save().rect(x, y, w, h).lineWidth(0.6);
+      if (fill && stroke) doc.fillAndStroke(fill, stroke);
+      else if (fill) doc.fill(fill);
+      else doc.stroke(stroke);
+      doc.restore();
+    },
+
+    line(x1, y1, x2, y2, { color }) {
+      doc.save().moveTo(x1, y1).lineTo(x2, y2).lineWidth(0.6).strokeColor(color).stroke().restore();
+    },
+
+    image(buffer, x, y, w, h) {
+      doc.image(buffer, x, y, { width: w, height: h });
+    },
+
+    text(value, x, y, {
+      font = 'Helvetica', size = 10, color = '#000000', align = 'left', width,
+    } = {}) {
+      doc.font(font).fontSize(size).fillColor(color);
+      const options = { lineBreak: false };
+      if (align !== 'left' && width) Object.assign(options, { width, align });
+      doc.text(String(value), x, y, options);
+    },
+
+    /** Corta o texto com reticências para caber na largura. */
+    fit(value, font, size, maxWidth) {
+      const text = String(value);
+      if (measure(text, font, size) <= maxWidth) return text;
+      let end = text.length;
+      while (end > 0 && measure(`${text.slice(0, end)}…`, font, size) > maxWidth) end -= 1;
+      return `${text.slice(0, end).trimEnd()}…`;
+    },
+
+    /** Quebra o texto em linhas que caibam na largura. */
+    wrap(value, font, size, maxWidth) {
+      const lines = [];
+      let current = '';
+      for (const word of String(value).split(/\s+/)) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (current && measure(candidate, font, size) > maxWidth) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = candidate;
+        }
+      }
+      if (current) lines.push(current);
+      return lines;
+    },
+
+    toBuffer() {
+      doc.end();
+      return finished;
+    },
+  };
+}
+
+/**
  * Gera o PDF do relatório de atendimentos.
  * @param {object} report resultado de relatoriosService.gerar
  * @param {{ mostrarBarbeiros: boolean }} options exibe colunas/tabelas por barbeiro (visão geral do administrador)
+ * @returns {Promise<Buffer>}
  */
 export function buildReportPdf(report, { mostrarBarbeiros }) {
-  const doc = new PdfDocument();
-  const contentWidth = doc.width - MARGIN * 2;
-  let y = 0;
-
   const subtitulo = report.barbeiro ? report.barbeiro.nome : 'Todos os barbeiros';
   const periodo = `${dateBr(report.periodo.inicio)} a ${dateBr(report.periodo.fim)}`;
+  const doc = createCanvas({ Title: `Relatório de atendimentos ${periodo}`, Author: 'Zé Barbeiro' });
+  const contentWidth = doc.width - MARGIN * 2;
+  let y = 0;
 
   function firstPageHeader() {
     doc.rect(0, 0, doc.width, 96, { fill: COLOR.espresso });
@@ -264,5 +348,5 @@ export function buildReportPdf(report, { mostrarBarbeiros }) {
     });
   }
 
-  return doc.toBuffer({ title: `Relatório de atendimentos ${periodo}`, author: 'Zé Barbeiro' });
+  return doc.toBuffer();
 }

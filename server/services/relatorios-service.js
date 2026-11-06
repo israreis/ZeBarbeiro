@@ -2,7 +2,7 @@ import { notFound, unprocessable } from '../http/errors.js';
 import { ROLES } from '../domain/roles.js';
 import { STATUS } from '../domain/agenda.js';
 import { WEEKDAYS, weekdayOf } from '../domain/time.js';
-import * as v from '../validation.js';
+import { parse, relatorioQuerySchema } from '../schemas.js';
 
 const MAX_DIAS_PERIODO = 366;
 const TAXA_CANCELAMENTO_ALTA = 0.15;
@@ -112,50 +112,47 @@ function gerarInsights({
  * Relatórios e indicadores de atendimentos.
  * O administrador vê todos os barbeiros (ou filtra um); o barbeiro vê apenas os próprios dados.
  */
-export function createRelatoriosService({ store, clock }) {
-  function resolverFiltros(actor, query) {
-    const inicio = v.isoDate(query.inicio, 'data inicial');
-    const fim = v.isoDate(query.fim, 'data final');
-    if (inicio > fim) throw unprocessable('A data inicial deve ser anterior ou igual à data final.');
+export function createRelatoriosService({ repos, clock }) {
+  async function resolverFiltros(actor, query) {
+    const { inicio, fim, barbeiroId: filtro } = parse(relatorioQuerySchema, query);
     if (daysBetween(inicio, fim) > MAX_DIAS_PERIODO) {
       throw unprocessable(`Escolha um período de até ${MAX_DIAS_PERIODO} dias.`);
     }
 
-    let barbeiroId = null;
-    if (actor.perfil === ROLES.BARBEIRO) barbeiroId = actor.id;
-    else if (query.barbeiroId) barbeiroId = String(query.barbeiroId);
-
-    if (barbeiroId && !store.snapshot.barbeiros.some((b) => b.id === barbeiroId)) {
-      throw notFound('Barbeiro não encontrado.');
-    }
-    return { inicio, fim, barbeiroId };
+    // O barbeiro sempre vê apenas os próprios dados, qualquer que seja o filtro enviado.
+    const barbeiroId = actor.perfil === ROLES.BARBEIRO ? actor.id : filtro;
+    const barbeiro = barbeiroId ? await repos.barbeiros.findById(barbeiroId) : null;
+    if (barbeiroId && !barbeiro) throw notFound('Barbeiro não encontrado.');
+    return {
+      inicio, fim, barbeiroId, barbeiro,
+    };
   }
 
   /** Agendamentos do período já enriquecidos com nomes e valor (sem bloqueios). */
-  function carregar(db, { inicio, fim, barbeiroId }) {
-    const usuarios = new Map(db.usuarios.map((u) => [u.id, u]));
-    const servicos = new Map(db.servicos.map((s) => [s.id, s]));
-    return db.agendamentos
-      .filter((ag) => ag.status !== STATUS.BLOQUEADO
-        && ag.data >= inicio && ag.data <= fim
-        && (!barbeiroId || ag.barbeiroId === barbeiroId))
-      .map((ag) => {
-        const servico = servicos.get(ag.servicoId);
-        const cliente = ag.clienteId ? usuarios.get(ag.clienteId)?.nome : ag.clienteNome;
-        return {
-          data: ag.data,
-          horario: ag.horarioInicio,
-          barbeiroId: ag.barbeiroId,
-          barbeiro: usuarios.get(ag.barbeiroId)?.nome ?? 'Barbeiro removido',
-          cliente: cliente ?? '',
-          clienteChave: ag.clienteId ?? (ag.clienteNome ? `avulso:${ag.clienteNome.toLowerCase()}` : null),
-          servicoId: ag.servicoId,
-          servico: servico?.nome ?? '',
-          valor: ag.servicoId ? (ag.valor ?? servico?.valor ?? 0) : 0,
-          status: ag.status,
-        };
-      })
-      .sort((a, b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario));
+  async function carregar({ inicio, fim, barbeiroId }, servicos) {
+    const lista = await repos.agendamentos.listPeriodo({
+      inicio, fim, barbeiroId, excluirStatus: [STATUS.BLOQUEADO],
+    });
+    const pessoas = await repos.perfis.findManyByIds(lista.flatMap((ag) => [ag.barbeiroId, ag.clienteId]).filter(Boolean));
+    const nomes = new Map(pessoas.map((p) => [p.id, p.nome]));
+    const servicosPorId = new Map(servicos.map((sv) => [sv.id, sv]));
+
+    return lista.map((ag) => {
+      const servico = servicosPorId.get(ag.servicoId);
+      const cliente = ag.clienteId ? nomes.get(ag.clienteId) : ag.clienteNome;
+      return {
+        data: ag.data,
+        horario: ag.horarioInicio,
+        barbeiroId: ag.barbeiroId,
+        barbeiro: nomes.get(ag.barbeiroId) ?? 'Barbeiro removido',
+        cliente: cliente ?? '',
+        clienteChave: ag.clienteId ?? (ag.clienteNome ? `avulso:${ag.clienteNome.toLowerCase()}` : null),
+        servicoId: ag.servicoId,
+        servico: servico?.nome ?? '',
+        valor: ag.servicoId ? (ag.valor ?? servico?.valor ?? 0) : 0,
+        status: ag.status,
+      };
+    });
   }
 
   function agrupar(lista, chave) {
@@ -170,15 +167,18 @@ export function createRelatoriosService({ store, clock }) {
 
   return {
     /** Monta o relatório completo do período (usado pela tela, pelo painel e pelas exportações). */
-    gerar(actor, query) {
-      const db = store.snapshot;
-      const filtros = resolverFiltros(actor, query);
+    async gerar(actor, query) {
+      const filtros = await resolverFiltros(actor, query);
       const dias = daysBetween(filtros.inicio, filtros.fim);
       const anterior = { inicio: addDays(filtros.inicio, -dias), fim: addDays(filtros.inicio, -1) };
 
-      const atendimentos = carregar(db, filtros);
+      const servicos = await repos.servicos.list();
+      const [atendimentos, atendimentosAnteriores] = await Promise.all([
+        carregar(filtros, servicos),
+        carregar({ ...anterior, barbeiroId: filtros.barbeiroId }, servicos),
+      ]);
       const resumo = resumir(atendimentos);
-      const resumoAnterior = resumir(carregar(db, { ...anterior, barbeiroId: filtros.barbeiroId }));
+      const resumoAnterior = resumir(atendimentosAnteriores);
       const ativos = atendimentos.filter((ag) => ag.status !== STATUS.CANCELADO);
 
       const porBarbeiro = [...agrupar(atendimentos, (ag) => ag.barbeiroId)]
@@ -227,9 +227,7 @@ export function createRelatoriosService({ store, clock }) {
         });
       }
 
-      const barbeiro = filtros.barbeiroId
-        ? { id: filtros.barbeiroId, nome: db.usuarios.find((u) => u.id === filtros.barbeiroId)?.nome ?? '' }
-        : null;
+      const barbeiro = filtros.barbeiro ? { id: filtros.barbeiro.id, nome: filtros.barbeiro.nome } : null;
 
       return {
         periodo: { inicio: filtros.inicio, fim: filtros.fim, anterior },

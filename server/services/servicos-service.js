@@ -1,50 +1,38 @@
-import crypto from 'node:crypto';
 import { conflict, notFound } from '../http/errors.js';
 import { ROLES } from '../domain/roles.js';
-import * as v from '../validation.js';
+import { parse, servicoSchema } from '../schemas.js';
 
-function parseServico(body) {
-  return {
-    nome: v.requiredString(body?.nome, 'nome', { max: 60 }),
-    valor: v.positiveNumber(body?.valor, 'valor'),
-    duracaoMinutos: v.positiveInteger(body?.duracaoMinutos, 'duração (minutos)', { max: 480 }),
-    ativo: body?.ativo === undefined ? true : v.boolean(body.ativo, 'ativo'),
-  };
-}
+const normalizarNome = (nome) => nome.toLocaleLowerCase('pt-BR');
 
-function assertNomeDisponivel(db, nome, ignoreId) {
-  const key = nome.toLocaleLowerCase('pt-BR');
-  if (db.servicos.some((s) => s.id !== ignoreId && s.nome.toLocaleLowerCase('pt-BR') === key)) {
-    throw conflict('Já existe um serviço com este nome.');
+export function createServicosService({ repos }) {
+  /** Verificação amigável; o índice único no banco garante a regra mesmo sob concorrência. */
+  async function assertNomeDisponivel(nome, ignorarId) {
+    const servicos = await repos.servicos.list();
+    if (servicos.some((s) => s.id !== ignorarId && normalizarNome(s.nome) === normalizarNome(nome))) {
+      throw conflict('Já existe um serviço com este nome.');
+    }
   }
-}
 
-export function createServicosService({ store }) {
   return {
     /** Administrador vê todos; demais perfis apenas os serviços ativos. */
-    list(actor) {
-      const { servicos } = store.snapshot;
+    async list(actor) {
+      const servicos = await repos.servicos.list();
       return actor.perfil === ROLES.ADMIN ? servicos : servicos.filter((s) => s.ativo);
     },
 
-    create(body) {
-      const dados = parseServico(body);
-      return store.update((db) => {
-        assertNomeDisponivel(db, dados.nome);
-        const servico = { id: crypto.randomUUID(), ...dados };
-        db.servicos.push(servico);
-        return servico;
-      });
+    async create(body) {
+      const dados = parse(servicoSchema, body);
+      await assertNomeDisponivel(dados.nome);
+      return repos.servicos.insert(dados);
     },
 
-    update(id, body) {
-      const dados = parseServico(body);
-      return store.update((db) => {
-        const servico = db.servicos.find((s) => s.id === id);
-        if (!servico) throw notFound('Serviço não encontrado.');
-        assertNomeDisponivel(db, dados.nome, id);
-        return Object.assign(servico, dados);
-      });
+    async update(id, body) {
+      const dados = parse(servicoSchema, body);
+      if (!(await repos.servicos.findById(id))) throw notFound('Serviço não encontrado.');
+      await assertNomeDisponivel(dados.nome, id);
+      const servico = await repos.servicos.update(id, dados);
+      if (!servico) throw notFound('Serviço não encontrado.');
+      return servico;
     },
   };
 }

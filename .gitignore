@@ -1,10 +1,6 @@
 # Dependências
 node_modules/
 
-# Banco de dados local (gerado a partir de data/seed.json)
-data/db.json
-data/*.tmp
-
 # Logs
 *.log
 npm-debug.log*
@@ -19,4 +15,7 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
-data/uploads/
+
+# Supabase CLI (projeto local)
+supabase/.temp/
+supabase/.branches/
