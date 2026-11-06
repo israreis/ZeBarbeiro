@@ -374,22 +374,6 @@ body.is-ready main {
   font-size: 0.8rem;
 }
 
-.account-details {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.6rem 1.5rem;
-  margin: 0;
-}
-
-.account-details dt {
-  color: var(--sand);
-  font-weight: 500;
-}
-
-.account-details dd {
-  margin: 0;
-}
-
 @media (max-width: 576px) {
   .app-main {
     padding-top: 1.75rem;

@@ -1,4 +1,4 @@
-# BarberApp — Zé Barbeiro
+# Zé Barbeiro
 
 Sistema web de agendamento para barbearias. Clientes reservam horários com o barbeiro e o serviço desejados; barbeiros gerenciam a própria agenda; o administrador mantém o cadastro de barbeiros e serviços e acompanha todos os atendimentos.
 
@@ -27,15 +27,17 @@ Back-end em **Node.js + Fastify**, com dados, login e fotos no **Supabase** (Pos
 | **Barbeiro** | Acompanhar o próprio painel de indicadores, exportar os próprios relatórios em PDF e Excel, ver a agenda do dia, incluir atendimentos manualmente (informando o nome do cliente), bloquear horários, concluir atendimentos e consultar o histórico. |
 | **Administrador** | Acompanhar o painel com gráficos e destaques da barbearia, consultar e exportar relatórios de todos os barbeiros (PDF e Excel), cadastrar e editar barbeiros (foto, dias, horários e serviços) e serviços; consultar a agenda e o histórico de qualquer barbeiro. |
 
-Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha. Barbeiros também trocam a própria foto por ali.
+Todos os perfis têm a página **Minha conta**, onde editam nome, celular, nascimento e e-mail (a troca de e-mail exige a senha atual) e alteram a senha, com medidor de força e lista de requisitos. Barbeiros também trocam a própria foto por ali.
 
 ## Como executar
 
 Pré-requisitos: **Node.js 22 ou superior** e um projeto no [Supabase](https://supabase.com) (o plano gratuito atende).
 
-1. Instale as dependências:
+1. Baixe o projeto e instale as dependências:
 
    ```bash
+   git clone https://github.com/israreis/ZeBarbeiro.git
+   cd ZeBarbeiro
    npm install
    ```
 
@@ -108,7 +110,7 @@ Criados pelo `npm run db:seed`. Todos usam a senha **`barber123`** (ou o valor d
 | Barbeiro | `barbeiro@barbeiro.com.br` |
 | Cliente | `cliente@cliente.com.br` |
 
-> Troque as senhas antes de usar o sistema com dados reais.
+> A senha de demonstração é simples de propósito e não segue os requisitos de senha forte (que valem só para senhas novas). Troque as senhas antes de usar o sistema com dados reais.
 
 ## Estrutura do projeto
 
@@ -240,7 +242,8 @@ Todas as rotas ficam sob `/api`, recebem e devolvem JSON e, exceto login, renova
 
 ## Segurança
 
-- Senhas e sessões no **Supabase Auth** (hash bcrypt, tokens JWT de curta duração + refresh token). A API valida cada token no servidor de Auth, então sessões encerradas deixam de valer na hora.
+- Senhas e sessões no **Supabase Auth** (hash bcrypt, tokens JWT de curta duração + refresh token). A API valida o token no servidor de Auth e guarda o resultado em cache por até 5 minutos (`AUTH_CACHE_SECONDS`); logout e trocas de senha feitos pelo site limpam esse cache na hora.
+- Senha forte obrigatória em cadastros e trocas de senha: pelo menos 8 caracteres, letra maiúscula, letra minúscula, número e caractere especial. As telas mostram os requisitos e um medidor de força enquanto a pessoa digita; o servidor valida a mesma regra.
 - Logout encerra a sessão no Supabase; trocar a senha ou o e-mail encerra as demais sessões; a senha redefinida pelo administrador encerra todas as sessões do barbeiro.
 - Trocar o e-mail ou a senha exige a senha atual.
 - Autorização por perfil em todas as rotas, além de verificação de propriedade dos agendamentos (de outra pessoa responde 404).
@@ -263,8 +266,8 @@ npm test
 
 A suíte usa o executor nativo `node:test` e **não precisa de Supabase**: a API roda inteira com `app.inject` do Fastify e adaptadores em memória (`test/support/memory-adapters.js`) que seguem o mesmo contrato dos adaptadores reais. Cobre:
 
-- funções de domínio (horários, datas, fuso, status), limite de tentativas e esquemas Zod;
-- a API ponta a ponta: login, renovação e logout, cadastro (com desfazer do login no Auth se o perfil falhar), autorização por perfil, fotos, reservas, conflitos e reservas simultâneas, cancelamento, conclusão, histórico, relatórios, exportações, cabeçalhos de segurança e arquivos estáticos.
+- funções de domínio (horários, datas, fuso, status), limite de tentativas, esquemas Zod (incluindo os requisitos de senha) e caches;
+- a API ponta a ponta: login, renovação e logout, cadastro (com desfazer do login no Auth se o perfil falhar), autorização por perfil, fotos, reservas, conflitos e reservas simultâneas, cancelamento, conclusão, histórico, relatórios, exportações, cabeçalhos de segurança e arquivos estáticos — com o cache ligado, como em produção.
 
 Para validar a integração com o Supabase de verdade, use um projeto de desenvolvimento (separado do de produção), rode `npm run db:seed` e navegue pelos fluxos principais.
 

@@ -18,7 +18,7 @@ export function statusLabel(status) {
 /** Status que ocupam o horário na agenda (cancelados liberam o horário). */
 const OCCUPYING = new Set([STATUS.AGENDADO, STATUS.AGENDADO_BARBEIRO, STATUS.BLOQUEADO, STATUS.CONCLUIDO]);
 
-export function occupiesSlot(agendamento) {
+function occupiesSlot(agendamento) {
   return OCCUPYING.has(agendamento.status);
 }
 

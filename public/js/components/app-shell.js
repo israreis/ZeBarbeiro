@@ -62,7 +62,7 @@ const HEADER_TEMPLATE = `
     </nav>
   </header>`;
 
-export const FOOTER_TEMPLATE = `
+const FOOTER_TEMPLATE = `
   <footer class="app-footer">
     <div class="container">
       <div class="row g-4">
@@ -89,7 +89,7 @@ export const FOOTER_TEMPLATE = `
     </div>
   </footer>`;
 
-export function fromTemplate(html) {
+function fromTemplate(html) {
   const template = document.createElement('template');
   template.innerHTML = html.trim();
   return template.content;

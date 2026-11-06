@@ -10,7 +10,6 @@ export class HttpError extends Error {
   }
 }
 
-export const badRequest = (message, details) => new HttpError(400, message, details);
 export const unauthorized = (message = 'Sessão inválida ou expirada.') => new HttpError(401, message);
 export const forbidden = (message = 'Você não tem permissão para esta ação.') => new HttpError(403, message);
 export const notFound = (message = 'Recurso não encontrado.') => new HttpError(404, message);
