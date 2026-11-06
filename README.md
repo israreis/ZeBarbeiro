@@ -179,7 +179,12 @@ Navegador ──fetch──▶ Fastify (helmet, rate limit) ──▶ routes (pe
 - **Back-end**: os `services` concentram as regras de negócio e validam toda entrada com Zod; o `domain` contém funções puras e testáveis. Os serviços não conhecem o Supabase: recebem **repositórios**, **identidade** e **fotos** por injeção (portas e adaptadores). Em produção entram os adaptadores de `server/infra/supabase`; nos testes, versões em memória com o mesmo contrato.
 - **O navegador nunca fala direto com o Supabase.** Toda leitura e escrita passa pela API, que usa a chave de serviço. Por isso o RLS fica ativo e **sem políticas** em todas as tabelas: as chaves públicas não acessam nada, mesmo que vazem.
 - **Integridade no banco**: chaves estrangeiras, `check` para status, dias, expediente e valores, nome de serviço único (sem diferenciar maiúsculas) e um **índice único parcial** que impede dois agendamentos ativos no mesmo barbeiro/data/horário — a garantia final contra reserva dupla, mesmo com acessos simultâneos.
-- **Desempenho**: cada consulta ao Supabase é uma ida pela internet, então o servidor evita idas desnecessárias. Logins já validados ficam em cache por 30 s (logout, troca de senha/e-mail e senha redefinida limpam na hora); serviços e barbeiros ficam em cache por 60 s e são renovados a cada gravação; o nome do cliente vem na mesma consulta dos agendamentos; consultas independentes rodam em paralelo; e a conexão é aberta logo na inicialização. Com `LOG_LEVEL=debug`, o log mostra o tempo de cada chamada ao Supabase. Para menor latência, crie o projeto do Supabase na região mais próxima dos usuários (para o Brasil, *South America (São Paulo)*).
+- **Desempenho (cache)**: cada consulta ao Supabase é uma ida pela internet, então o servidor guarda em memória o que já leu (`server/auth/session-cache.js` e `server/infra/cached-repositories.js`):
+  - logins já validados (até 5 min, nunca além da validade do token);
+  - serviços, barbeiros e perfis;
+  - horários ocupados por barbeiro/dia e listas por período (histórico, painel, relatórios e exportações).
+
+  Toda gravação feita pela API limpa o cache afetado na hora, e leituras iniciadas antes de uma gravação não são guardadas. O tempo de expiração só limita alterações feitas direto no Supabase (ex.: SQL Editor). A garantia contra reserva dupla continua no banco (índice único), não no cache. O cache vale para **uma instância** do servidor; com várias, use TTL baixo ou um cache compartilhado (Redis). Além disso, o nome do cliente vem na mesma consulta dos agendamentos, consultas independentes rodam em paralelo e a conexão é aberta logo na inicialização. Com `LOG_LEVEL=debug`, o log mostra o tempo de cada chamada ao Supabase. Para menor latência, crie o projeto do Supabase na região mais próxima dos usuários (para o Brasil, *South America (São Paulo)*).
 - **Dados**: datas em ISO (`AAAA-MM-DD`), horários `HH:MM`, valores em `numeric(10,2)` e IDs `uuid`.
 
 ## API
@@ -282,6 +287,6 @@ Variáveis de ambiente (veja `.env.example`). São validadas na inicialização:
 | `LOGIN_MAX_ATTEMPTS` | `5` | Tentativas de login com falha antes do bloqueio temporário. |
 | `LOGIN_WINDOW_MINUTES` | `15` | Janela do bloqueio de login. |
 | `API_RATE_LIMIT_PER_MINUTE` | `300` | Requisições por minuto por IP na API. |
-| `AUTH_CACHE_SECONDS` | `30` | Tempo em que um login já validado é reaproveitado sem consultar o Supabase Auth (`0` desliga). |
-| `DATA_CACHE_SECONDS` | `60` | Cache em memória de serviços e barbeiros (`0` desliga). |
+| `AUTH_CACHE_SECONDS` | `300` | Tempo em que um login já validado é reaproveitado sem consultar o Supabase Auth (`0` desliga). Nunca passa da validade do token. |
+| `DATA_CACHE_SECONDS` | `300` | Cache em memória de serviços, barbeiros, perfis e agenda (`0` desliga). Gravações pela API limpam na hora. |
 | `SEED_PASSWORD` | `barber123` | Senha dos usuários criados pelo `db:seed`. |

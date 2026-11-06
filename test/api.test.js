@@ -1,6 +1,7 @@
 import { beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../server/app.js';
+import { withCache } from '../server/infra/cached-repositories.js';
 import { baseConfig } from '../server/config.js';
 import {
   createMemoryIdentity, createMemoryPhotoStorage, createMemoryRepositories,
@@ -98,8 +99,9 @@ beforeEach(async () => {
   repos = createMemoryRepositories(fixture);
   identity = createMemoryIdentity(fixture.perfis.map((p) => ({ id: p.id, email: p.email, senha: SENHA })));
   photos = createMemoryPhotoStorage();
+  // Cache ligado como em produção: os testes também verificam que gravações o invalidam.
   app = await buildApp({
-    repos, identity, photos, config: testConfig, clock: () => HOJE,
+    repos: withCache(repos, { ttlMs: 60_000 }), identity, photos, config: testConfig, clock: () => HOJE,
   });
 });
 

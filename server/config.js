@@ -25,10 +25,13 @@ const envSchema = z.object({
   LOGIN_WINDOW_MINUTES: positiveInt(15),
   API_RATE_LIMIT_PER_MINUTE: positiveInt(300),
 
-  /** Por quanto tempo um token já validado é reaproveitado sem consultar o Supabase Auth. */
-  AUTH_CACHE_SECONDS: z.coerce.number().int().min(0).max(300).default(30),
-  /** Cache de serviços e barbeiros (dados pequenos, lidos em quase toda tela). */
-  DATA_CACHE_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
+  /**
+   * Por quanto tempo um token já validado é reaproveitado sem consultar o Supabase Auth
+   * (nunca além da expiração do próprio token). Logout e trocas de senha limpam na hora.
+   */
+  AUTH_CACHE_SECONDS: z.coerce.number().int().min(0).max(3600).default(300),
+  /** Cache de cadastros, perfis e agenda. Gravações pela API limpam na hora. */
+  DATA_CACHE_SECONDS: z.coerce.number().int().min(0).max(3600).default(300),
 });
 
 /** Valores fixos e derivados, compartilhados com os testes. */
