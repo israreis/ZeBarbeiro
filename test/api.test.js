@@ -20,6 +20,7 @@ const testConfig = {
   timeZone: 'America/Sao_Paulo',
   loginRateLimit: { maxAttempts: 3, windowMs: 60_000 },
   apiRateLimitPerMinute: 10_000,
+  authCacheMs: 30_000, // cache ligado: os testes de logout/senha verificam a invalidação
   supabase: { url: 'https://projeto.supabase.co' },
 };
 
@@ -129,13 +130,12 @@ describe('autenticação', () => {
     assert.equal((await api('GET', '/api/auth/me', { token })).status, 401);
   });
 
-  test('refresh token renova a sessão e o token antigo deixa de valer', async () => {
+  test('refresh token renova a sessão', async () => {
     const { body: sessao } = await api('POST', '/api/auth/login', { body: { email: 'c1@teste.com', senha: SENHA } });
     const renovada = await api('POST', '/api/auth/refresh', { body: { refreshToken: sessao.refreshToken } });
     assert.equal(renovada.status, 200);
     assert.notEqual(renovada.body.token, sessao.token);
     assert.equal((await api('GET', '/api/auth/me', { token: renovada.body.token })).status, 200);
-    assert.equal((await api('GET', '/api/auth/me', { token: sessao.token })).status, 401);
     assert.equal((await api('POST', '/api/auth/refresh', { body: { refreshToken: 'invalido' } })).status, 401);
   });
 

@@ -5,6 +5,8 @@ import {
 } from '../server/domain/time.js';
 import { STATUS, findOccupant, generateSlots, slotEnd } from '../server/domain/agenda.js';
 import { RateLimiter } from '../server/auth/rate-limiter.js';
+import { SessionCache } from '../server/auth/session-cache.js';
+import { withCache } from '../server/infra/cached-repositories.js';
 import { detectImageType } from '../server/infra/image-type.js';
 import {
   barbeiroSchema, cadastroClienteSchema, parse, servicoSchema,
@@ -104,4 +106,40 @@ test('fotos são reconhecidas pelo conteúdo, não pelo tipo informado', () => {
   const png = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
   assert.deepEqual(detectImageType(png), { ext: 'png', contentType: 'image/png' });
   assert.equal(detectImageType(Buffer.from('<svg onload=alert(1)>    ')), null);
+});
+
+test('cache de sessão expira, respeita invalidações e guarda o token só como hash', () => {
+  let now = 0;
+  const cache = new SessionCache({ ttlMs: 100, now: () => now });
+  const usuario = { id: 'u1', nome: 'A' };
+  cache.set('tok-1', usuario);
+  cache.set('tok-2', usuario);
+  assert.equal(cache.get('tok-1'), usuario);
+  assert.ok(![...cache.entries.keys()].includes('tok-1'));
+
+  cache.deleteUser('u1', { exceto: 'tok-2' });
+  assert.equal(cache.get('tok-1'), null);
+  assert.equal(cache.get('tok-2'), usuario);
+
+  now = 100;
+  assert.equal(cache.get('tok-2'), null, 'expira após o TTL');
+});
+
+test('cache de serviços evita consultas repetidas e é limpo ao salvar', async () => {
+  let consultas = 0;
+  const lista = [{ id: 's1', nome: 'Corte' }];
+  const repos = withCache({
+    servicos: {
+      list: async () => { consultas += 1; return lista; },
+      insert: async (dados) => { lista.push({ id: 's2', ...dados }); return lista.at(-1); },
+    },
+    barbeiros: { list: async () => [] },
+    perfis: {},
+  }, { ttlMs: 60_000 });
+
+  await Promise.all([repos.servicos.list(), repos.servicos.findById('s1'), repos.servicos.list()]);
+  assert.equal(consultas, 1, 'chamadas simultâneas compartilham a consulta');
+  await repos.servicos.insert({ nome: 'Barba' });
+  assert.equal((await repos.servicos.list()).length, 2);
+  assert.equal(consultas, 2);
 });

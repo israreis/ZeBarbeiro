@@ -24,6 +24,11 @@ const envSchema = z.object({
   LOGIN_MAX_ATTEMPTS: positiveInt(5),
   LOGIN_WINDOW_MINUTES: positiveInt(15),
   API_RATE_LIMIT_PER_MINUTE: positiveInt(300),
+
+  /** Por quanto tempo um token já validado é reaproveitado sem consultar o Supabase Auth. */
+  AUTH_CACHE_SECONDS: z.coerce.number().int().min(0).max(300).default(30),
+  /** Cache de serviços e barbeiros (dados pequenos, lidos em quase toda tela). */
+  DATA_CACHE_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
 });
 
 /** Valores fixos e derivados, compartilhados com os testes. */
@@ -64,6 +69,8 @@ export function loadConfig(env = process.env) {
       windowMs: e.LOGIN_WINDOW_MINUTES * 60 * 1000,
     }),
     apiRateLimitPerMinute: e.API_RATE_LIMIT_PER_MINUTE,
+    authCacheMs: e.AUTH_CACHE_SECONDS * 1000,
+    dataCacheMs: e.DATA_CACHE_SECONDS * 1000,
   });
 }
 

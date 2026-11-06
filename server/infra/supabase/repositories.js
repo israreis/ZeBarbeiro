@@ -99,10 +99,14 @@ const toBarbeiro = (row) => ({
   fotoPath: row.foto_path,
 });
 
+/** O nome do cliente cadastrado vem junto, na mesma consulta (sem ida extra ao banco). */
+const AGENDAMENTO_COLUMNS = '*, cliente:perfis!cliente_id(nome)';
+
 const toAgendamento = (row) => ({
   id: row.id,
   barbeiroId: row.barbeiro_id,
   clienteId: row.cliente_id,
+  clienteCadastroNome: row.cliente?.nome ?? null,
   clienteNome: row.cliente_nome,
   clienteTelefone: row.cliente_telefone,
   servicoId: row.servico_id,
@@ -251,7 +255,7 @@ export function createSupabaseRepositories(db) {
   const agendamentos = {
     async findById(id) {
       if (!isUuid(id)) return null;
-      const row = unwrap(await db.from('agendamentos').select('*').eq('id', id).maybeSingle());
+      const row = unwrap(await db.from('agendamentos').select(AGENDAMENTO_COLUMNS).eq('id', id).maybeSingle());
       return row ? toAgendamento(row) : null;
     },
 
@@ -259,7 +263,7 @@ export function createSupabaseRepositories(db) {
     async listOcupados({ barbeiroIds, data }) {
       const ids = barbeiroIds.filter(isUuid);
       if (!ids.length) return [];
-      const rows = unwrap(await db.from('agendamentos').select('*')
+      const rows = unwrap(await db.from('agendamentos').select(AGENDAMENTO_COLUMNS)
         .in('barbeiro_id', ids)
         .eq('data', data)
         .neq('status', 'Cancelado'));
@@ -276,7 +280,7 @@ export function createSupabaseRepositories(db) {
     }) {
       if ((barbeiroId && !isUuid(barbeiroId)) || (clienteId && !isUuid(clienteId))) return [];
       const rows = await fetchAll(() => {
-        let query = db.from('agendamentos').select('*').gte('data', inicio).lte('data', fim);
+        let query = db.from('agendamentos').select(AGENDAMENTO_COLUMNS).gte('data', inicio).lte('data', fim);
         if (barbeiroId) query = query.eq('barbeiro_id', barbeiroId);
         if (clienteId) query = query.eq('cliente_id', clienteId);
         for (const status of excluirStatus) query = query.neq('status', status);
@@ -288,7 +292,7 @@ export function createSupabaseRepositories(db) {
     /** Insere vários horários num único comando (tudo ou nada). */
     async insertMany(lista) {
       const rows = unwrap(
-        await db.from('agendamentos').insert(lista.map(agendamentoToRow)).select('*'),
+        await db.from('agendamentos').insert(lista.map(agendamentoToRow)).select(AGENDAMENTO_COLUMNS),
         { conflictMessage: HORARIO_OCUPADO },
       );
       return rows.map(toAgendamento).sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
@@ -304,7 +308,7 @@ export function createSupabaseRepositories(db) {
         .update({ status: para, ...(canceladoEm ? { cancelado_em: canceladoEm } : {}) })
         .eq('id', id)
         .in('status', de)
-        .select('*')
+        .select(AGENDAMENTO_COLUMNS)
         .maybeSingle());
       return row ? toAgendamento(row) : null;
     },

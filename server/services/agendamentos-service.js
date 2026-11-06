@@ -23,15 +23,14 @@ const ALTERADO_POR_OUTRO = 'Este agendamento foi alterado por outra pessoa. Atua
 export function createAgendamentosService({
   repos, photos, clock,
 }) {
-  /** Acrescenta nomes de cliente/barbeiro e o serviço aos agendamentos, com poucas consultas. */
+  /**
+   * Acrescenta nomes de cliente/barbeiro e o serviço aos agendamentos.
+   * Barbeiros e serviços vêm do cache; o nome do cliente cadastrado já vem na consulta.
+   */
   async function detalharTodos(agendamentos) {
     if (!agendamentos.length) return [];
-    const pessoaIds = agendamentos.flatMap((ag) => [ag.barbeiroId, ag.clienteId]).filter(Boolean);
-    const [pessoas, servicos] = await Promise.all([
-      repos.perfis.findManyByIds(pessoaIds),
-      repos.servicos.list(),
-    ]);
-    const nomes = new Map(pessoas.map((p) => [p.id, p.nome]));
+    const [barbeiros, servicos] = await Promise.all([repos.barbeiros.list(), repos.servicos.list()]);
+    const nomesBarbeiros = new Map(barbeiros.map((b) => [b.id, b.nome]));
     const servicosPorId = new Map(servicos.map((s) => [s.id, s]));
 
     return agendamentos.map((ag) => {
@@ -42,8 +41,8 @@ export function createAgendamentosService({
         horarioInicio: ag.horarioInicio,
         horarioFim: ag.horarioFim,
         status: ag.status,
-        cliente: ag.clienteId ? (nomes.get(ag.clienteId) ?? null) : (ag.clienteNome ?? null),
-        barbeiro: nomes.get(ag.barbeiroId) ?? null,
+        cliente: (ag.clienteId ? ag.clienteCadastroNome : ag.clienteNome) ?? null,
+        barbeiro: nomesBarbeiros.get(ag.barbeiroId) ?? null,
         // O valor exibido é o gravado na reserva, não o preço atual do serviço.
         servico: servico ? { id: servico.id, nome: servico.nome, valor: ag.valor ?? servico.valor } : null,
       };

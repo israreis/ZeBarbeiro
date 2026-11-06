@@ -8,7 +8,7 @@ import { barbeiroSchema, parse } from '../schemas.js';
  * são gravados juntos pela função SQL `salvar_barbeiro`.
  */
 export function createBarbeirosService({
-  repos, identity, photos, clock,
+  repos, identity, photos, sessionCache, clock,
 }) {
   const fotoUrl = (barbeiro) => photos.publicUrl(barbeiro.fotoPath);
 
@@ -87,8 +87,12 @@ export function createBarbeirosService({
         await identity.updateUser(id, { senha: novaSenha });
         // Senha redefinida pelo administrador encerra as sessões abertas do barbeiro.
         await identity.revokeAllSessions(id);
+        sessionCache.deleteUser(id);
       }
-      return toAdminView(await repos.barbeiros.save({ id, ...dados }), servicos);
+      const salvo = await repos.barbeiros.save({ id, ...dados });
+      // Nome/e-mail alterados pelo administrador valem também nas sessões em cache.
+      sessionCache.deleteUser(id);
+      return toAdminView(salvo, servicos);
     },
 
     /** Salva (ou substitui) a foto. O arquivo anterior é apagado depois da troca. */

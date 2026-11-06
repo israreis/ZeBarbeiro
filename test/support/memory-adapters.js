@@ -46,6 +46,11 @@ export function createMemoryRepositories(seed) {
     });
   };
 
+  /** Mesmo formato do Supabase: o nome do cliente cadastrado vem junto. */
+  const comCliente = (ag) => ({
+    ...clone(ag), clienteCadastroNome: ag.clienteId ? (byId('perfis', ag.clienteId)?.nome ?? null) : null,
+  });
+
   const emailDuplicado = (email, id) => tables.perfis.some((p) => p.email === email && p.id !== id);
   const ocupa = (ag) => ag.status !== 'Cancelado';
 
@@ -139,12 +144,12 @@ export function createMemoryRepositories(seed) {
     agendamentos: {
       async findById(id) {
         const agendamento = byId('agendamentos', id);
-        return agendamento ? clone(agendamento) : null;
+        return agendamento ? comCliente(agendamento) : null;
       },
       async listOcupados({ barbeiroIds, data }) {
         return tables.agendamentos
           .filter((ag) => barbeiroIds.includes(ag.barbeiroId) && ag.data === data && ocupa(ag))
-          .map(clone);
+          .map(comCliente);
       },
       async listPeriodo({
         inicio, fim, barbeiroId = null, clienteId = null, excluirStatus = [],
@@ -155,7 +160,7 @@ export function createMemoryRepositories(seed) {
             && (!clienteId || ag.clienteId === clienteId)
             && !excluirStatus.includes(ag.status))
           .sort((a, b) => a.data.localeCompare(b.data) || a.horarioInicio.localeCompare(b.horarioInicio))
-          .map(clone);
+          .map(comCliente);
       },
       /** Atômico como o INSERT único no Postgres: o índice parcial é verificado antes de gravar. */
       async insertMany(lista) {
@@ -164,13 +169,13 @@ export function createMemoryRepositories(seed) {
         if (colide) throw conflict('Um dos horários selecionados não está mais disponível.');
         const criados = lista.map((ag) => ({ ...ag, criadoEm: new Date().toISOString(), canceladoEm: null }));
         tables.agendamentos.push(...criados);
-        return criados.map(clone);
+        return criados.map(comCliente);
       },
       async updateStatus(id, { de, para, canceladoEm = null }) {
         const agendamento = byId('agendamentos', id);
         if (!agendamento || !de.includes(agendamento.status)) return null;
         Object.assign(agendamento, { status: para }, canceladoEm ? { canceladoEm } : {});
-        return clone(agendamento);
+        return comCliente(agendamento);
       },
     },
   };

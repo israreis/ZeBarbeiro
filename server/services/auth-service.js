@@ -9,7 +9,7 @@ import {
  * Senhas e sessões ficam no Supabase Auth (`identity`); os dados exibidos, na tabela `perfis`.
  */
 export function createAuthService({
-  repos, identity, loginLimiter, clock,
+  repos, identity, loginLimiter, sessionCache, clock,
 }) {
   /** Monta a resposta de sessão (tokens + usuário) a partir de uma sessão do Auth. */
   async function sessionResponse(session) {
@@ -34,8 +34,12 @@ export function createAuthService({
   return {
     /** Usuário dono do token, ou null se o token for inválido/expirado. */
     async authenticate(token) {
+      const emCache = sessionCache.get(token);
+      if (emCache) return emCache;
       const userId = await identity.verifyToken(token);
-      return userId ? repos.perfis.findById(userId) : null;
+      const usuario = userId ? await repos.perfis.findById(userId) : null;
+      if (usuario) sessionCache.set(token, usuario);
+      return usuario;
     },
 
     async login(body, clientIp) {
@@ -60,6 +64,7 @@ export function createAuthService({
     },
 
     logout(token) {
+      sessionCache.deleteToken(token);
       return identity.signOut(token, 'local');
     },
 
@@ -93,7 +98,11 @@ export function createAuthService({
       }
 
       const atualizado = await repos.perfis.update(usuario.id, dados);
-      if (emailAlterado) await identity.signOut(currentToken, 'others');
+      sessionCache.updateUser(atualizado);
+      if (emailAlterado) {
+        sessionCache.deleteUser(usuario.id, { exceto: currentToken });
+        await identity.signOut(currentToken, 'others');
+      }
       return toPublicUser(atualizado);
     },
 
@@ -103,6 +112,7 @@ export function createAuthService({
       if (senhaAtual === novaSenha) throw unprocessable('A nova senha deve ser diferente da senha atual.');
 
       await identity.updateUser(usuario.id, { senha: novaSenha });
+      sessionCache.deleteUser(usuario.id, { exceto: currentToken });
       await identity.signOut(currentToken, 'others');
     },
   };

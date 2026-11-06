@@ -129,22 +129,21 @@ export function createRelatoriosService({ repos, clock }) {
   }
 
   /** Agendamentos do período já enriquecidos com nomes e valor (sem bloqueios). */
-  async function carregar({ inicio, fim, barbeiroId }, servicos) {
+  async function carregar({ inicio, fim, barbeiroId }, { servicos, barbeiros }) {
     const lista = await repos.agendamentos.listPeriodo({
       inicio, fim, barbeiroId, excluirStatus: [STATUS.BLOQUEADO],
     });
-    const pessoas = await repos.perfis.findManyByIds(lista.flatMap((ag) => [ag.barbeiroId, ag.clienteId]).filter(Boolean));
-    const nomes = new Map(pessoas.map((p) => [p.id, p.nome]));
+    const nomesBarbeiros = new Map(barbeiros.map((b) => [b.id, b.nome]));
     const servicosPorId = new Map(servicos.map((sv) => [sv.id, sv]));
 
     return lista.map((ag) => {
       const servico = servicosPorId.get(ag.servicoId);
-      const cliente = ag.clienteId ? nomes.get(ag.clienteId) : ag.clienteNome;
+      const cliente = ag.clienteId ? ag.clienteCadastroNome : ag.clienteNome;
       return {
         data: ag.data,
         horario: ag.horarioInicio,
         barbeiroId: ag.barbeiroId,
-        barbeiro: nomes.get(ag.barbeiroId) ?? 'Barbeiro removido',
+        barbeiro: nomesBarbeiros.get(ag.barbeiroId) ?? 'Barbeiro removido',
         cliente: cliente ?? '',
         clienteChave: ag.clienteId ?? (ag.clienteNome ? `avulso:${ag.clienteNome.toLowerCase()}` : null),
         servicoId: ag.servicoId,
@@ -172,10 +171,11 @@ export function createRelatoriosService({ repos, clock }) {
       const dias = daysBetween(filtros.inicio, filtros.fim);
       const anterior = { inicio: addDays(filtros.inicio, -dias), fim: addDays(filtros.inicio, -1) };
 
-      const servicos = await repos.servicos.list();
+      const [servicos, barbeiros] = await Promise.all([repos.servicos.list(), repos.barbeiros.list()]);
+      const cadastros = { servicos, barbeiros };
       const [atendimentos, atendimentosAnteriores] = await Promise.all([
-        carregar(filtros, servicos),
-        carregar({ ...anterior, barbeiroId: filtros.barbeiroId }, servicos),
+        carregar(filtros, cadastros),
+        carregar({ ...anterior, barbeiroId: filtros.barbeiroId }, cadastros),
       ]);
       const resumo = resumir(atendimentos);
       const resumoAnterior = resumir(atendimentosAnteriores);

@@ -3,6 +3,7 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { RateLimiter } from './auth/rate-limiter.js';
+import { SessionCache } from './auth/session-cache.js';
 import { HttpError } from './http/errors.js';
 import { nowInTimeZone } from './domain/time.js';
 import { IMAGE_CONTENT_TYPES } from './infra/image-type.js';
@@ -53,23 +54,25 @@ function cspDirectives(storageOrigin) {
  * @param {object} deps.config ver server/config.js
  * @param {() => {date: string, time: string}} [deps.clock] relógio injetável (testes)
  * @param {object|boolean} [deps.logger] configuração do logger (pino) do Fastify
+ * @param {object} [deps.loggerInstance] instância pronta do pino (compartilhada com outros módulos)
  */
 export async function buildApp({
-  repos, identity, photos, config, clock, logger = false,
+  repos, identity, photos, config, clock, logger = false, loggerInstance,
 }) {
   const app = Fastify({
-    logger,
+    ...(loggerInstance ? { loggerInstance } : { logger }),
     bodyLimit: config.maxBodyBytes,
     trustProxy: config.trustProxy ?? false,
   });
 
   const now = clock ?? (() => nowInTimeZone(config.timeZone));
+  const sessionCache = new SessionCache({ ttlMs: config.authCacheMs ?? 0 });
   const services = {
     auth: createAuthService({
-      repos, identity, loginLimiter: new RateLimiter(config.loginRateLimit), clock: now,
+      repos, identity, sessionCache, loginLimiter: new RateLimiter(config.loginRateLimit), clock: now,
     }),
     barbeiros: createBarbeirosService({
-      repos, identity, photos, clock: now,
+      repos, identity, photos, sessionCache, clock: now,
     }),
     servicos: createServicosService({ repos }),
     agendamentos: createAgendamentosService({ repos, photos, clock: now }),
